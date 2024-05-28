@@ -1,16 +1,23 @@
-from imgpopup import ImageConfig, ColorConfig, BaseWindow, ChoiceWindow
+from imgpopup import  ColorConfig, BaseWindow, ChoiceWindow, MultiTextChoiceWindow, CopyTextWindow
 
-config = ColorConfig(350, 200, '#00ffff', '#ffa500', 0.99, 0.8, '-y', True, 1.0, 0.1)
-config.animation(70, 4)
-#config = ImageConfig(150, 400, '#00ffff', '#ffa500', 1.0, '-y', False, './test-bg.png')
+config = ColorConfig(450, 300)
+#config = ColorConfig(350, 200, '#00ffff', '#ffa500', 0.99, 0.8, '-y', True)
+#config.invert()
+config.imagery('./test-bg.png', 'logo.png')
+
+config.animation(20, 4)
 
 
-win = ChoiceWindow(config)
+
+#win = ChoiceWindow(config)
+#win = MultiTextChoiceWindow(config)
+win = CopyTextWindow(config)
 txt = '''this is a multi line string
 that is going to span multiple lines'''
 #win.Ask('Ask a question?')
-x = win.Ask('Ask a question?', '1', '2', True)
+#x = win.Ask('Ask a question?', '1', '2', True)
 #x = win.Ask(txt)
+x = win.Ask('Ask a question?', 'copy', 'cancel', txt)
 
 print(x.response)
 

@@ -5,10 +5,18 @@ __version__ = "0.01"
 import threading
 import tkinter
 from tkinter import font
+import tkinter.messagebox
 from PIL import Image, ImageTk
+from pathlib import Path
 import sys
 import time
 from colour import Color
+import pyperclip
+import os
+
+FILE_PATH = Path(__file__).parent
+
+print(FILE_PATH)
 
 
 class GradientFrame(tkinter.Canvas):
@@ -89,9 +97,10 @@ class WidgetConfig:
         self.h3 = (font, fontSize+3)
 
 class Config:
-    def __init__(self, width=250, height=300):
+    def __init__(self, width=450, height=300, title=""):
         self.width = width
         self.height = height
+        self.title = title
         self.widgetConfig = None
 
     def DefaultWidgetConfig(self):
@@ -101,7 +110,7 @@ class Config:
         self.widgetConfig = WidgetConfig(padding, font, fontSize)
 
 class ColorConfig(Config):
-    def __init__(self, width=250, height=300, color1="#00ffff", color2="#ffa500", alpha=1.0, saturation=1.0, direct='+x', hasframe=True, widgetSaturation=1.0, widgetLuminance=0.5):
+    def __init__(self, width=250, height=300, color1="#00ffff", color2="#ffa500", alpha=1.0, saturation=1.0, direct='+x', hasframe=True):
         Config.__init__(self, width, height)
         self.color1 = Color(color1)
         self.color2 = Color(color2)
@@ -109,23 +118,68 @@ class ColorConfig(Config):
         self.saturation = saturation
         self.direct = direct
         self.hasframe = hasframe
-        self.widgetSaturation = widgetSaturation
-        self.widgetLuminance = widgetLuminance
         self.animated = False
         self.speed = 0
         self.stretch = 1
+        self.fg_color = Color(self.color1.hex_l)
+        self.bg_color = Color(self.color2.hex_l)
+        limit = self.width
+        if 'y' in direct:
+            limit = self.height
+        colors = list(self.bg_color.range_to(self.fg_color, limit))
+        self.mg_color = colors[int(len(colors)/2)]
+        self.path = None
+        self.file = None
+        self.icon_path = None
+        self.icon_file = None
+
+    def invert(self):
+        self.fg_color = Color(self.color2.hex_l)
+        self.bg_color = Color(self.color1.hex_l)
+
+    def fg_luminance(value):
+        self.fg_color.luminance = value
+
+    def bg_luminance(value):
+        self.bg_color.luminance = value
+
+    def mg_luminance(value):
+        self.mg_color.luminance = value
+
+    def fg_saturation(value):
+        self.fg_color.saturation = value
+
+    def bg_saturation(value):
+        self.bg_color.saturation = value
+
+    def mg_saturation(value):
+        self.mg_color.saturation = value
+
+    def swap_mg_for_bg():
+        bg = self.bg_color.hex_l
+        mg = self.mg_color.hex_l
+        self.bg_color = Color(mg)
+        self.mg_color = Color(bg)
+
+    def swap_mg_for_fg():
+        fg = self.fg_color.hex_l
+        mg = self.mg_color.hex_l
+        self.bg_color = Color(mg)
+        self.mg_color = Color(fg)
+
+    def imagery(self, path, icon_path=None, useImgSize=False):
+        self.path = path
+        self.file = Image.open(self.path)
+        if icon_path != None:
+            self.icon_path = os.path.join(FILE_PATH, icon_path)
+            #self.icon_path = icon_path
+        if useImgSize:
+            self.width, self.height = self.file.size
 
     def animation(self, speed=50, stretch=2):
         self.speed = speed
         self.stretch = stretch
         self.animated = True
-
-class ImageConfig(ColorConfig):
-    def __init__(self, width, height, color1, color2, alpha, direct, hasframe, path):
-        ColorConfig.__init__(self, width, height, color1, color2, alpha, direct, hasframe)
-        self.path = path
-        self.file = Image.open(self.path)
-        self.width, self.height = self.file.size
 
 
 class BaseWindow:
@@ -135,32 +189,25 @@ class BaseWindow:
         self.hasImg = False
         self.width = config.width
         self.height = config.height
+        self.title = config.title
         self.color1 = config.color1
         self.color2 = config.color2
         self.saturation = config.saturation
         self.animated = config.animated
         self.speed = config.speed
         self.stretch = config.stretch
-        limit = self.width
-        if 'y' in config.direct:
-            limit = self.height
-        
-        colors = list(Color(self.color1).range_to(Color(self.color2), limit))
-        self.midColor = colors[int(len(colors)/2)]
-        self.fg = Color(self.color1.hex_l)
-        self.bg = Color(self.color2.hex_l)
+        self.fg = config.fg_color
+        self.bg = config.bg_color
+        self.mg = config.mg_color
         self.alpha = config.alpha
         self.direct = config.direct
         self.hasframe = config.hasframe
-        self.widgetSaturation = config.widgetSaturation
-        self.widgetLuminance = config.widgetLuminance
-        self.midColor.saturation = self.widgetSaturation
-        if self.widgetLuminance != 0.5:
-            self.midColor.luminance = self.widgetLuminance
 
-        if hasattr(config, 'file'):
+        if config.path != None:
             self.file = config.file
             self.path = config.path
+            self.icon_path = config.icon_path
+            self.icon_file = config.icon_file
             self.hasImg = True
 
         if config.widgetConfig is None:
@@ -175,29 +222,31 @@ class BaseWindow:
 
         self.root = None
         self.canvas = None
-        self.bg = None
         self.btns = []
 
     def add_choice_btn(self, btn_txt):
         btn = tkinter.Button(self.canvas, text=btn_txt)
-        btn['command'] = lambda: self.entry_to_dict(dict_key)
         self.btns.append(btn)
         return btn
 
     def configure_btns(self):
         for btn in self.btns:
-            hlt_bg = Color(self.color2.hex_l)
-            hlt_fg = Color(self.color1.hex_l)
+            hlt_bg = Color(self.bg.hex_l)
+            hlt_fg = Color(self.fg.hex_l)
             hlt_bg.luminance = 0.45
             hlt_fg.luminance = 0.75
-            btn.configure(fg=self.color1.hex_l, bg=self.color2.hex_l, highlightthickness = 0, activebackground=hlt_bg.hex_l, activeforeground=hlt_fg.hex_l, font=self.h3, bd=0)
+            btn.configure(fg=self.fg.hex_l, bg=self.bg.hex_l, highlightthickness = 0, activebackground=hlt_bg.hex_l, activeforeground=hlt_fg.hex_l, font=self.h3, bd=0)
 
-    def add_entry(self):
-        bg = Color(self.color2.hex_l)
-        fg = Color(self.color1.hex_l)
+    def add_entry(self, multi=False, enabled=True):
+        bg = Color(self.bg.hex_l)
+        fg = Color(self.fg.hex_l)
         bg.luminance = 0.65
-        fg.luminance = 0.65
-        ent = tkinter.Entry(self.canvas, bg=bg.hex_l,fg=fg.hex_l,  bd=0, highlightthickness=0, font=self.font)
+        fg.luminance = 0.35
+        ent = None
+        if multi:
+            ent = tkinter.Text(self.canvas, bg=bg.hex_l,fg=fg.hex_l,  bd=0, highlightthickness=0, font=self.font)
+        else:
+            ent = tkinter.Entry(self.canvas, bg=bg.hex_l,fg=fg.hex_l,  bd=0, highlightthickness=0, font=self.font)
         return ent  
 
     def entry_to_dict(self, dict_key):
@@ -215,10 +264,16 @@ class BaseWindow:
 
     def _Show(self):
         self.root = tkinter.Tk()
+        self.root.geometry('1x1+10+10')
+        win = self.root.title(self.title)
         self.root.pack_propagate(0)
-        #self.root.resizable(width=False, height=False)
-        self.root.withdraw()
+        self._center_window(self.root)
+        self.root.overrideredirect(True)
         self.window = tkinter.Toplevel(width=self.width, height=self.height)
+        if self.icon_path != None:
+            self.icon_file = tkinter.Image("photo", file=self.icon_path)
+            self.root.wm_iconphoto(False, self.icon_file)
+            #tkinter.tk.call('wm','iconphoto',self.window._w, self.icon_file)
         self.window.resizable(width=False, height=False)
         self.window.pack_propagate(0)
         self.window.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -234,6 +289,8 @@ class BaseWindow:
         if self.hasImg:
             self.img = tkinter.PhotoImage(file=self.path, format='png')
             self.canvas.create_image(self.width/2, self.height/2, image=self.img)
+            
+                #self.root.iconbitmap(self.icon_path)
 
         self.window.wm_attributes("-alpha", self.alpha)
 
@@ -259,12 +316,12 @@ class DebugFontWindow(BaseWindow):
 class ChoiceWindow(BaseWindow):
     def __init__(self, config):
         BaseWindow.__init__(self, config)
-        self.b1 = None
-        self.b2 = None
+        self.b_accept = None
+        self.b_decline = None
         self.entry = None
         self.response = None
 
-    def Ask(self, msg, b1='OK', b2='Cancel', entry=False, horizontal=True):
+    def Ask(self, msg, b_accept='OK', b_decline='Cancel', entry=False, horizontal=True):
         self._Show()
         x = self.padding[0]
         y = self.height*0.15
@@ -281,76 +338,112 @@ class ChoiceWindow(BaseWindow):
             rely=0.23
 
         if horizontal:
-            self._add_horizontal_buttons(b1, b2)
+            self._add_horizontal_buttons(b_accept, b_decline)
         else:
-            self._add_vertical_buttons(b1, b2, rely, relHeight, inc)
+            self._add_vertical_buttons(b_accept, b_decline, rely, relHeight, inc)
         self.root.mainloop()
         return self
         
-    def _add_vertical_buttons(self, b1, b2, rely=0.333, relHeight=0.8, inc=1):
-        b1 = self.add_choice_btn(b1)
-        b2 = self.add_choice_btn(b2)
-        b1.place(x = self.width/2-((self.width/2)*0.8), rely = rely*inc, relheight = relHeight, relwidth = 0.75)
-        b2.place(x = self.width/2-((self.width/2)*0.8), rely = rely*(inc+1), relheight = relHeight, relwidth = 0.75)
+    def _add_vertical_buttons(self, b_accept, b_decline, rely=0.333, relHeight=0.8, inc=1):
+        b_accept = self.add_choice_btn(b_accept)
+        b_decline = self.add_choice_btn(b_decline)
+        b_accept.place(x = self.width/2-((self.width/2)*0.8), rely = rely*inc, relheight = relHeight, relwidth = 0.75)
+        b_decline.place(x = self.width/2-((self.width/2)*0.8), rely = rely*(inc+1), relheight = relHeight, relwidth = 0.75)
         self.configure_btns()
 
-    def _add_horizontal_buttons(self, b1, b2):
-        self.b1 = self.add_choice_btn(b1)
-        self.b1['command'] = self.b1_action
-        self.b2 = self.add_choice_btn(b2)
-        self.b2['command'] = self.b2_action
-        self.b1.place(x = self.padding[0], rely = 0.55, relheight = 0.333, relwidth = 0.45)
-        self.b2.place(x = (self.width-(self.width*0.45))-self.padding[0], rely = 0.55, relheight = 0.333, relwidth = 0.45)
+    def _add_horizontal_buttons(self, b_accept, b_decline, rely=0.55, relheight=0.333):
+        self.b_accept = self.add_choice_btn(b_accept)
+        self.b_accept['command'] = self.action_accept
+        self.b_decline = self.add_choice_btn(b_decline)
+        self.b_decline['command'] = self.action_decline
+        self.b_accept.place(x = self.padding[0], rely = rely, relheight = relheight, relwidth = 0.45)
+        self.b_decline.place(x = (self.width-(self.width*0.45))-self.padding[0], rely = rely, relheight = relheight, relwidth = 0.45)
         self.configure_btns()
 
-    def b1_action(self, event=None):
+    def action_accept(self, event=None):
         self.root.quit()
         if self.entry != None:
             self.response = self.entry.get()
         else:
-            self.response = self.b1.cget('text')
+            self.response = self.b_accept.cget('text')
             self.root.quit()
 
         self.root.destroy()
 
-    def b2_action(self, event=None):
-        self.response = self.b2.cget('text')
+    def action_decline(self, event=None):
+        self.response = self.b_decline.cget('text')
         self.root.quit()
         self.root.destroy()
 
 
-class CopyTextWindow(BaseWindow):
+class MultiTextChoiceWindow(ChoiceWindow):
     def __init__(self, config):
-        BaseWindow.__init__(self, config)
-    def Show(self):
+        ChoiceWindow.__init__(self, config)
+
+    def Ask(self, msg, b_accept='OK', b_decline='Cancel', horizontal=True):
         self._Show()
+        x = self.padding[0]
+        y = self.height*0.08
+        rely = 0.25
+        relHeight = 0.2
+        inc=2
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.color2.hex_l, font=self.h3, anchor='center')
+        self.entry = self.add_entry(True)
+        self.entry.place(x = self.width/2-((self.width/2)*0.85), rely = rely, relheight=0.4, relwidth = 0.85)
+        rely=0.23
 
-        bg_fill = self.color1.hex_l
-        fg_fill = self.color2.hex_l
+        self._add_horizontal_buttons(b_accept, b_decline,0.7, 0.2)
 
-        self.canvas.grid_anchor(anchor='center')
-        #l1 = tkinter.Label(self.canvas, text="Hello, world", width=int(self.width*0.1))
-        #l1.place(x = 1, rely = 0, relheight = 0.3, relwidth = 0.7)
-        e1 = tkinter.Entry(self.canvas, bg=bg_fill,fg=fg_fill,  bd=0, highlightthickness=0, font=('Fira Sans', 12))
-        t1 = tkinter.Text(self.canvas, bg=bg_fill, fg=fg_fill, bd=0, highlightthickness=0, font=('Fira Sans', 12))
-
-        # listnumber = 1
-        # for item in self.fonts:vnvbvbvcb
-        #     label = "listlabel" + str(listnumber)
-        #     label = tkinter.Label(self.canvas,text=item,font=(item, 16)).pack()
-        #     listnumber += 1
-
-        t1.place(x = self.width/2-((self.width/2)*0.8), rely = 0.1, relheight = 0.3, relwidth = 0.8)
-
-        #l1.grid(row=0, column=0, sticky="ew", padx=60, pady=10)
-        # e1.grid(row=1, column=0, sticky="ew", padx=60, pady=10)
-        # t1.grid(row=2, column=0, sticky="nsew", padx=60, pady=10)
-
-        self.canvas.grid_rowconfigure(2, weight=1)
-        self.canvas.grid_columnconfigure(2, weight=1)
-        # widget = tkinter.Label(self.canvas, text='Spam', fg='white', bg='black')
-        # widget.pack()
-        # self.canvas.create_window(self.width/2, self.height/2, window=widget)
         self.root.mainloop()
+        return self
 
+class CopyTextWindow(ChoiceWindow):
+    def __init__(self, config):
+        ChoiceWindow.__init__(self, config)
 
+    def Ask(self, msg, b_accept='Copy', b_decline='Cancel', entryTxt=''):
+        self._Show()
+        x = self.padding[0]
+        y = self.height*0.08
+        rely = 0.25
+        relHeight = 0.2
+        inc=2
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.color2.hex_l, font=self.h3, anchor='center')
+        self.entry = self.add_entry(True)
+        self.entry.place(x = self.width/2-((self.width/2)*0.95), rely = rely, relheight=0.4, relwidth = 0.95)
+        rely=0.23
+
+        self._add_buttons(b_accept, b_decline, 0.7, 0.2)
+
+        if entryTxt != '':
+            print(self.entry)
+            self.entry.insert('0.0',entryTxt)
+
+        self.root.mainloop()
+        return self
+
+    def _add_buttons(self, b_accept, b_decline, rely=0.55, relheight=0.333):
+        self.b_accept = self.add_choice_btn(b_accept)
+        self.b_accept['command'] = self.action_copy_text
+        self.b_decline = self.add_choice_btn(b_decline)
+        self.b_decline['command'] = self.action_decline
+        self.b_accept.place(x = self.padding[0], rely = rely, relheight = relheight, relwidth = 0.45)
+        self.b_decline.place(x = (self.width-(self.width*0.45))-self.padding[0], rely = rely, relheight = relheight, relwidth = 0.45)
+        self.configure_btns()
+
+    def action_copy_text(self, event=None):
+        self.root.quit()
+        if self.entry != None:
+            txt = self.entry.get('1.0', 'end')
+            self.response = tkinter.messagebox.showinfo('Confirm', 'Text copied for 10 seconds')
+            thread = threading.Thread(target=self.copy_action, args=[txt])
+            thread.setDaemon(True)
+            thread.start()
+            self.root.quit()
+
+        self.root.destroy()
+
+    def copy_action(self, text):
+        pyperclip.copy(text)
+        time.sleep(10)
+        pyperclip.copy("")
