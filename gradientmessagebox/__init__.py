@@ -108,7 +108,7 @@ class Config:
         self.widgetConfig = WidgetConfig(padding, font, fontSize)
 
 class ColorConfig(Config):
-    def __init__(self, width=250, height=300, color1="#00ffff", color2="#ffa500", alpha=1.0, saturation=1.0, direct='+x', hasframe=True):
+    def __init__(self, width=450, height=300, color1="#00ffff", color2="#ffa500", alpha=1.0, saturation=1.0, direct='+x', hasframe=True):
         Config.__init__(self, width, height)
         self.color1 = Color(color1)
         self.color2 = Color(color2)
