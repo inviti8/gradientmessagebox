@@ -1,4 +1,4 @@
-from anim_gradient_box import  ColorConfig, BaseWindow, ChoiceWindow, MultiTextChoiceWindow, CopyTextWindow, UserPasswordWindow
+from gradientmessagebox import  ColorConfig, BaseWindow, ChoiceWindow, MultiTextChoiceWindow, CopyTextWindow, UserPasswordWindow
 
 config = ColorConfig(450, 300)
 #config = ColorConfig(350, 200, '#00ffff', '#ffa500', 0.99, 0.8, '-y', True)
@@ -7,7 +7,7 @@ config.invert()
 
 #config.fg_saturation(0.5)
 #config.bg_saturation(0.5)
-config.gradient_saturation(0.5)
+#config.gradient_saturation(0.5)
 #config.imagery('./test-bg.png', './logo.png')
 
 config.animation(20, 4)
