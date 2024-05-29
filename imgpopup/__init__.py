@@ -171,8 +171,7 @@ class ColorConfig(Config):
         self.path = path
         self.file = Image.open(self.path)
         if icon_path != None:
-            self.icon_path = os.path.join(FILE_PATH, icon_path)
-            #self.icon_path = icon_path
+            self.icon_path = icon_path
         if useImgSize:
             self.width, self.height = self.file.size
 
@@ -202,6 +201,11 @@ class BaseWindow:
         self.alpha = config.alpha
         self.direct = config.direct
         self.hasframe = config.hasframe
+        self.file = None
+        self.path = None
+        self.icon_path = None
+        self.icon_file = None
+        self.hasImg = True
 
         if config.path != None:
             self.file = config.file
@@ -264,16 +268,18 @@ class BaseWindow:
 
     def _Show(self):
         self.root = tkinter.Tk()
+        if self.icon_path != None:
+            self.icon_file = tkinter.PhotoImage(file=self.icon_path)
+            self.root.iconphoto(True, self.icon_file)
+            self.root.iconify()
         self.root.geometry('1x1+10+10')
         win = self.root.title(self.title)
         self.root.pack_propagate(0)
         self._center_window(self.root)
         self.root.overrideredirect(True)
         self.window = tkinter.Toplevel(width=self.width, height=self.height)
-        if self.icon_path != None:
-            self.icon_file = tkinter.Image("photo", file=self.icon_path)
-            self.root.wm_iconphoto(False, self.icon_file)
-            #tkinter.tk.call('wm','iconphoto',self.window._w, self.icon_file)
+
+        self.root.overrideredirect(True)
         self.window.resizable(width=False, height=False)
         self.window.pack_propagate(0)
         self.window.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -286,11 +292,9 @@ class BaseWindow:
                    highlightthickness=0, relief="ridge")
         self.canvas.pack(expand=True, fill='both')
 
-        if self.hasImg:
+        if self.hasImg and self.path != None:
             self.img = tkinter.PhotoImage(file=self.path, format='png')
             self.canvas.create_image(self.width/2, self.height/2, image=self.img)
-            
-                #self.root.iconbitmap(self.icon_path)
 
         self.window.wm_attributes("-alpha", self.alpha)
 
@@ -376,6 +380,7 @@ class ChoiceWindow(BaseWindow):
         self.root.destroy()
 
 
+
 class MultiTextChoiceWindow(ChoiceWindow):
     def __init__(self, config):
         ChoiceWindow.__init__(self, config)
@@ -447,3 +452,68 @@ class CopyTextWindow(ChoiceWindow):
         pyperclip.copy(text)
         time.sleep(10)
         pyperclip.copy("")
+
+
+class UserPasswordWindow(ChoiceWindow):
+    def __init__(self, config):
+        ChoiceWindow.__init__(self, config)
+        self.user = None
+        self.pw = None
+        self.confirm_pw = None
+
+    def Ask(self, msg, b_accept='LOGIN', b_decline='Cancel', horizontal=True):
+        self._Show()
+        bullet = "\u25CF"
+        startx = ((self.width/2)*0.58)
+        x = self.width/2-startx
+        y = self.height*0.08
+        rely = 0.25
+        relHeight = 0.2
+        labely = self.height*rely+self.font[1]
+        inc=2
+
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.color2.hex_l, font=self.h3, anchor='center')
+        self.canvas.create_text(x, labely, text='  USER  ', fill=self.color2.hex_l, font=self.font, anchor='e')
+        self.canvas.create_text(x, labely*1.45, text='PASSWORD', fill=self.color2.hex_l, font=self.font, anchor='e')
+        self.canvas.create_text(x, labely*1.85, text='CONFIRM ', fill=self.color2.hex_l, font=self.font, anchor='e')
+        self.user = self.add_entry()
+        self.user.place(x = x*1.1, rely = rely, relwidth = 0.6)
+        self.pw = self.add_entry()
+        self.pw['show'] = bullet
+        self.pw.place(x = x*1.1, rely = rely*1.5, relwidth = 0.6)
+        self.confirm_pw = self.add_entry()
+        self.confirm_pw['show'] = bullet
+        self.confirm_pw.place(x = x*1.1, rely = rely*2, relwidth = 0.6)
+
+        rely=0.23
+
+        self._add_button(b_accept, 0.7, 0.2)
+
+        self.root.mainloop()
+        return self
+
+    def _add_button(self, b_accept, rely=0.55, relheight=0.333):
+        self.b_accept = self.add_choice_btn(b_accept)
+        self.b_accept['command'] = self.action_login
+        self.b_accept.place(x = self.width/2-((self.width/2)*0.8), rely = rely, relheight = relheight, relwidth = 0.75)
+
+        self.configure_btns()
+
+    def action_login(self, event=None):
+        self.root.quit()
+        if self.user != None and self.pw != None and self.confirm_pw != None:
+            user = self.user.get()
+            pw = self.pw.get()
+            confirm = self.confirm_pw.get()
+            if len(user)>0 and len(pw)>0 and len(confirm):
+                if pw == confirm:
+                    self.response = {'user':user, 'pw':pw}
+                    self.root.destroy()
+                else:
+                    self.response = tkinter.messagebox.showerror('ERROR', 'Passwords are different.')
+            else:
+                self.response = tkinter.messagebox.showerror('ERROR', 'All fields must be filled')
+
+        else:
+            self.response = self.b_accept.cget('text')
+            self.root.quit()
