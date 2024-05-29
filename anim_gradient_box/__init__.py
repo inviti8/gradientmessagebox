@@ -144,6 +144,10 @@ class ColorConfig(Config):
     def mg_luminance(self, value):
         self.mg_color.luminance = value
 
+    def gradient_luminance(self, value):
+        self.color1.luminance = value
+        self.color2.luminance = value
+
     def fg_saturation(self, value):
         self.fg_color.saturation = value
 
@@ -152,6 +156,10 @@ class ColorConfig(Config):
 
     def mg_saturation(self, value):
         self.mg_color.saturation = value
+
+    def gradient_saturation(self, value):
+        self.color1.saturation = value
+        self.color2.saturation = value
 
     def swap_mg_for_bg(self):
         bg = self.bg_color.hex_l
@@ -330,7 +338,7 @@ class ChoiceWindow(BaseWindow):
         rely = 0.333
         relHeight = 0.25
         inc=1
-        self.canvas.create_text(self.width/2, y, text=msg, fill=self.color2.hex_l, font=self.h3, anchor='center')
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.fg.hex_l, font=self.h3, anchor='center')
         if entry:
             rely=0.3
             relHeight=0.2
@@ -390,7 +398,7 @@ class MultiTextChoiceWindow(ChoiceWindow):
         rely = 0.25
         relHeight = 0.2
         inc=2
-        self.canvas.create_text(self.width/2, y, text=msg, fill=self.color2.hex_l, font=self.h3, anchor='center')
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.fg.hex_l, font=self.h3, anchor='center')
         self.entry = self.add_entry(True)
         self.entry.place(x = self.width/2-((self.width/2)*0.85), rely = rely, relheight=0.4, relwidth = 0.85)
         rely=0.23
@@ -411,7 +419,7 @@ class CopyTextWindow(ChoiceWindow):
         rely = 0.25
         relHeight = 0.2
         inc=2
-        self.canvas.create_text(self.width/2, y, text=msg, fill=self.color2.hex_l, font=self.h3, anchor='center')
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.fg.hex_l, font=self.h3, anchor='center')
         self.entry = self.add_entry(True)
         self.entry.place(x = self.width/2-((self.width/2)*0.95), rely = rely, relheight=0.4, relwidth = 0.95)
         rely=0.23
@@ -470,10 +478,10 @@ class UserPasswordWindow(ChoiceWindow):
         labely = self.height*rely+self.font[1]
         inc=2
 
-        self.canvas.create_text(self.width/2, y, text=msg, fill=self.color2.hex_l, font=self.h3, anchor='center')
-        self.canvas.create_text(x, labely, text='  USER  ', fill=self.color2.hex_l, font=self.font, anchor='e')
-        self.canvas.create_text(x, labely*1.45, text='PASSWORD', fill=self.color2.hex_l, font=self.font, anchor='e')
-        self.canvas.create_text(x, labely*1.85, text='CONFIRM ', fill=self.color2.hex_l, font=self.font, anchor='e')
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.fg.hex_l, font=self.h3, anchor='center')
+        self.canvas.create_text(x, labely, text='  USER  ', fill=self.fg.hex_l, font=self.font, anchor='e')
+        self.canvas.create_text(x, labely*1.45, text='PASSWORD', fill=self.fg.hex_l, font=self.font, anchor='e')
+        self.canvas.create_text(x, labely*1.85, text='CONFIRM ', fill=self.fg.hex_l, font=self.font, anchor='e')
         self.user = self.add_entry()
         self.user.place(x = x*1.1, rely = rely, relwidth = 0.6)
         self.pw = self.add_entry()
