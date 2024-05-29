@@ -1,4 +1,4 @@
-from imgpopup import  ColorConfig, BaseWindow, ChoiceWindow, MultiTextChoiceWindow, CopyTextWindow, UserPasswordWindow
+from anim_gradient_box import  ColorConfig, BaseWindow, ChoiceWindow, MultiTextChoiceWindow, CopyTextWindow, UserPasswordWindow
 
 config = ColorConfig(450, 300)
 #config = ColorConfig(350, 200, '#00ffff', '#ffa500', 0.99, 0.8, '-y', True)
