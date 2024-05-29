@@ -16,8 +16,6 @@ import os
 
 FILE_PATH = Path(__file__).parent
 
-print(FILE_PATH)
-
 
 class GradientFrame(tkinter.Canvas):
     '''A gradient frame which uses a canvas to draw the background'''
@@ -82,7 +80,7 @@ class GradientFrame(tkinter.Canvas):
         self._thread.start()
 
     def Animate(self):
-        if self._active:
+        if self and self._active:
             self.colors.append(self.colors.pop(0))
             self._draw_gradient()
             self.after(self._speed, self.Animate)
@@ -137,31 +135,31 @@ class ColorConfig(Config):
         self.fg_color = Color(self.color2.hex_l)
         self.bg_color = Color(self.color1.hex_l)
 
-    def fg_luminance(value):
+    def fg_luminance(self, value):
         self.fg_color.luminance = value
 
-    def bg_luminance(value):
+    def bg_luminance(self, value):
         self.bg_color.luminance = value
 
-    def mg_luminance(value):
+    def mg_luminance(self, value):
         self.mg_color.luminance = value
 
-    def fg_saturation(value):
+    def fg_saturation(self, value):
         self.fg_color.saturation = value
 
-    def bg_saturation(value):
+    def bg_saturation(self, value):
         self.bg_color.saturation = value
 
-    def mg_saturation(value):
+    def mg_saturation(self, value):
         self.mg_color.saturation = value
 
-    def swap_mg_for_bg():
+    def swap_mg_for_bg(self):
         bg = self.bg_color.hex_l
         mg = self.mg_color.hex_l
         self.bg_color = Color(mg)
         self.mg_color = Color(bg)
 
-    def swap_mg_for_fg():
+    def swap_mg_for_fg(self):
         fg = self.fg_color.hex_l
         mg = self.mg_color.hex_l
         self.bg_color = Color(mg)
