@@ -1,0 +1,14 @@
+certifi==2024.2.2
+charset-normalizer==3.3.2
+colour==0.1.5
+docutils==0.21.2
+flit==3.9.0
+flit_core==3.9.0
+idna==3.7
+pillow==10.3.0
+pyperclip==1.8.2
+PyQt5-Qt5==5.15.2
+PyQt5-sip==12.13.0
+requests==2.32.2
+tomli_w==1.0.0
+urllib3==2.2.1
