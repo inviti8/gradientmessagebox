@@ -1,6 +1,6 @@
 """A Simple tkinter prompt window with a settable image background window, By: Fibo Metavinci"""
 
-__version__ = "0.01"
+__version__ = "0.2"
 
 import threading
 import tkinter
@@ -304,6 +304,12 @@ class BaseWindow:
 
         self.window.wm_attributes("-alpha", self.alpha)
 
+    def Close(self):
+        self.canvas.Stop()
+        self.window.destroy()
+        sys.stdout.flush()
+        return
+
     def on_close(self):
         self.canvas.Stop()
         self.root.destroy()
@@ -321,6 +327,34 @@ class DebugFontWindow(BaseWindow):
             label = "listlabel" + str(listnumber)
             label = tkinter.Label(self.canvas,text=item,font=(item, 16)).pack()
             listnumber += 1
+
+class ThreadedWindow:
+    def __init__(self, window, config, *args):
+        self.window = window(config)
+        self.stop_event= threading.Event()
+        self.thread = threading.Thread(target=self.window.Show, args=args)
+        self.thread.setDaemon(True)
+
+    def Show(self):
+        self.thread.start()
+        
+    def Close(self):
+        self.window.Close()
+
+class TextWindow(BaseWindow):
+    def __init__(self, config):
+        BaseWindow.__init__(self, config)
+
+    def Show(self, msg):
+        self._Show()
+        x = self.width/2
+        y = self.height/2
+        rely = 0.333
+        relHeight = 0.25
+        inc=1
+        self.canvas.create_text(x, y, text=msg, fill=self.fg.hex_l, font=self.h3, anchor='center')
+        self.root.mainloop()
+        return self
 
 
 class ChoiceWindow(BaseWindow):
