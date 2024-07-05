@@ -108,19 +108,20 @@ class Config:
         self.widgetConfig = WidgetConfig(padding, font, fontSize)
 
 class ColorConfig(Config):
-    def __init__(self, width=450, height=300, color1="#00ffff", color2="#ffa500", alpha=1.0, saturation=1.0, direct='+x', hasframe=True):
+    def __init__(self, width=450, height=300, color1="#00ffff", color2="#ffa500", alpha=1.0, saturation=1.0, direct='+x', hasFrame=True):
         Config.__init__(self, width, height)
         self.color1 = Color(color1)
         self.color2 = Color(color2)
         self.alpha = alpha
         self.saturation = saturation
         self.direct = direct
-        self.hasframe = hasframe
+        self.hasFrame = hasFrame
         self.animated = False
         self.speed = 0
         self.stretch = 1
         self.fg_color = Color(self.color1.hex_l)
         self.bg_color = Color(self.color2.hex_l)
+        self.txt_color = None
         limit = self.width
         if 'y' in direct:
             limit = self.height
@@ -130,6 +131,9 @@ class ColorConfig(Config):
         self.file = None
         self.icon_path = None
         self.icon_file = None
+
+    def custom_txt_color(self, color):
+        self.txt_color = Color(color)
 
     def invert(self):
         self.fg_color = Color(self.color2.hex_l)
@@ -186,6 +190,9 @@ class ColorConfig(Config):
         self.stretch = stretch
         self.animated = True
 
+    def has_frame(self, showFrame):
+        self.hasFrame = showFrame
+
 
 class BaseWindow:
     def __init__(self, config):
@@ -202,11 +209,14 @@ class BaseWindow:
         self.speed = config.speed
         self.stretch = config.stretch
         self.fg = config.fg_color
+        self.txt_color = config.fg_color
+        if config.txt_color != None:
+            self.txt_color = config.txt_color
         self.bg = config.bg_color
         self.mg = config.mg_color
         self.alpha = config.alpha
         self.direct = config.direct
-        self.hasframe = config.hasframe
+        self.hasFrame = config.hasFrame
         self.file = None
         self.path = None
         self.icon_path = None
@@ -233,6 +243,9 @@ class BaseWindow:
         self.root = None
         self.canvas = None
         self.btns = []
+        self.text = None
+        self.msg = ''
+        self.animate = False
 
     def add_choice_btn(self, btn_txt):
         btn = tkinter.Button(self.canvas, text=btn_txt)
@@ -242,14 +255,14 @@ class BaseWindow:
     def configure_btns(self):
         for btn in self.btns:
             hlt_bg = Color(self.bg.hex_l)
-            hlt_fg = Color(self.fg.hex_l)
+            hlt_fg = Color(self.txt_color.hex_l)
             hlt_bg.luminance = 0.45
             hlt_fg.luminance = 0.75
-            btn.configure(fg=self.fg.hex_l, bg=self.bg.hex_l, highlightthickness = 0, activebackground=hlt_bg.hex_l, activeforeground=hlt_fg.hex_l, font=self.h3, bd=0)
+            btn.configure(fg=self.txt_color.hex_l, bg=self.bg.hex_l, highlightthickness = 0, activebackground=hlt_bg.hex_l, activeforeground=hlt_fg.hex_l, font=self.h3, bd=0)
 
     def add_entry(self, multi=False, enabled=True):
         bg = Color(self.bg.hex_l)
-        fg = Color(self.fg.hex_l)
+        fg = Color(self.txt_color.hex_l)
         bg.luminance = 0.65
         fg.luminance = 0.35
         ent = None
@@ -265,6 +278,25 @@ class BaseWindow:
             d, key = dict_key
             d[key] = data
             self.top.destroy()
+
+    def update_canvas_text(self, text):
+        self.canvas.itemconfigure(self.text, text=text)
+
+    def start_msg_animation(self, *args):
+        thread = threading.Thread(target=self.msg_animation, args=args)
+        thread.setDaemon(True)
+        thread.start()
+
+    def msg_animation(self, animation=['  -  ', '  /  ', '  |  ', '  \\  '], appendMsg=True):
+        i = 0
+        while self.animate:
+            anim = animation[i % len(animation)]
+            if appendMsg:
+                self.update_canvas_text( anim + f"{self.msg}" )
+            else:
+                self.update_canvas_text( anim )
+            time.sleep(0.25)
+            i += 1
 
     def _center_window(self, win):
         win.wait_visibility() # make sure the window is ready
@@ -290,7 +322,7 @@ class BaseWindow:
         self.window.pack_propagate(0)
         self.window.protocol("WM_DELETE_WINDOW", self.on_close)
 
-        if not self.hasframe:
+        if not self.hasFrame:
             self.window.overrideredirect(True)
 
         self._center_window(self.window)
@@ -303,14 +335,18 @@ class BaseWindow:
             self.canvas.create_image(self.width/2, self.height/2, image=self.img)
 
         self.window.wm_attributes("-alpha", self.alpha)
+        if self.animate:
+            self.start_msg_animation()
 
     def Close(self):
+        self.animate = False
         self.canvas.Stop()
         self.window.destroy()
         sys.stdout.flush()
         return
 
     def on_close(self):
+        self.animate = False
         self.canvas.Stop()
         self.root.destroy()
 
@@ -328,11 +364,84 @@ class DebugFontWindow(BaseWindow):
             label = tkinter.Label(self.canvas,text=item,font=(item, 16)).pack()
             listnumber += 1
 
-class ThreadedWindow:
-    def __init__(self, window, config, *args):
-        self.window = window(config)
-        self.stop_event= threading.Event()
-        self.thread = threading.Thread(target=self.window.Show, args=args)
+
+class BaseConfigWindow:
+    def __init__(self):
+        self.config = ColorConfig(width=400, height=350, color1="#4ed8a7", color2="#cf5270", alpha=1.0, saturation=1.0, direct='+x', hasFrame=True)
+        self.config.animation(speed=20, stretch=4)
+        self.window = None
+
+    def configure(self, config):
+        self.config = config
+
+    def dimensions(self, width, height):
+        self.config.width = width
+        self.config.height = height
+
+    def imagery(self, bg_img, logo_img):
+        self.config.imagery(bg_img, logo_img)
+
+    def color1(self, color):
+        self.config.color1 = color
+
+    def color2(self, color):
+        self.config.color2 = color
+
+    def alpha(self, alpha):
+        self.config.alpha = alpha
+
+    def invert(self):
+        self.config.invert()
+
+    def swap_fg_for_bg(self):
+        self.config.swap_fg_for_bg()
+
+    def swap_mg_for_bg(self):
+        self.config.swap_mg_for_bg()
+
+    def swap_bg_for_fg(self):
+        self.config.swap_bg_for_fg()
+
+    def swap_mg_for_fg(self):
+        self.config.swap_mg_for_fg()
+
+    def fg_saturation(self, saturation):
+        self.config.fg_saturation(saturation)
+
+    def bg_saturation(self, saturation):
+        self.config.bg_saturation(saturation)
+
+    def mg_saturation(self, saturation):
+        self.config.mg_saturation(saturation)
+
+    def fg_luminance(self, luminance):
+        self.config.fg_saturation(luminance)
+
+    def bg_luminance(self, saturation):
+        self.config.bg_saturation(luminance)
+
+    def mg_luminance(self, saturation):
+        self.config.mg_saturation(luminance)
+
+    def custom_txt_color(self, color):
+        self.config.custom_txt_color(color)
+
+    def saturation(self, saturation):
+        self.config.saturation = saturation
+
+    def has_frame(self, showFrame):
+        self.config.has_frame(showFrame)
+
+
+class ThreadedWindow(BaseConfigWindow):
+    def __init__(self, window, *args):
+        BaseConfigWindow.__init__(self)
+        self._window = window
+        self.args = args
+
+    def _init(self):
+        self.window = self._window(self.config)
+        self.thread = threading.Thread(target=self.window.Show, args=self.args)
         self.thread.setDaemon(True)
 
     def Show(self):
@@ -340,6 +449,84 @@ class ThreadedWindow:
         
     def Close(self):
         self.window.Close()
+
+    def update_canvas_text(text):
+        self.window.update_canvas_text(text)
+
+
+class BasePresetThreadedWindow(ThreadedWindow):
+    def __init__(self, window, *args):
+        self.config = ColorConfig(width=400, height=350, color1="#4ed8a7", color2="#cf5270", alpha=1.0, saturation=1.0, direct='+x', hasFrame=True)
+        self.config.animation(speed=20, stretch=4)
+        ThreadedWindow.__init__(self, window, args)
+
+
+class PresetThreadedWindow(BasePresetThreadedWindow):
+    def __init__(self, window, msg, *args):
+        BasePresetThreadedWindow.__init__(self, window, args)
+        self.msg = msg
+
+    def init(self):
+        self._init()
+        self.window.msg = self.msg
+
+
+class PresetLoadingMessage(PresetThreadedWindow):
+    def __init__(self, msg, *args):
+        BasePresetThreadedWindow.__init__(self, TextWindow, args)
+        self.dimensions(width=500, height=40)
+        self.has_frame(showFrame=False)
+        self.msg = msg
+
+    def Play(self):
+        self.init()
+        self.window.animate = True
+        self.Show()
+        return self
+
+    def Stop(self):
+        self.window.animate = False
+        self.Close()
+
+class PresetImageBgMessage(PresetThreadedWindow):
+    def __init__(self, msg, bg_img, logo_img, *args):
+        BasePresetThreadedWindow.__init__(self, TextWindow, args)
+        self.dimensions(width=450, height=300)
+        self.has_frame(showFrame=False)
+        self.imagery(bg_img, logo_img)
+        self.msg = msg
+
+    def Play(self):
+        self.init()
+        self.window.animate = True
+        self.Show()
+        return self
+
+    def Stop(self):
+        self.window.animate = False
+        self.Close()
+
+
+class PresetWindow(BaseConfigWindow):
+    def __init__(self, _window):
+        BaseConfigWindow.__init__(self)
+        self._window = _window
+        self.window = None
+
+    def _init(self):
+        self.window = self._window(self.config)
+
+
+class PresetChoiceWindow(PresetWindow):
+    def __init__(self):
+        PresetWindow.__init__(self, ChoiceWindow)
+        self.dimensions(width=450, height=300)
+        self.has_frame(showFrame=True)
+
+    def Ask(self, msg, b_accept='OK', b_decline='Cancel', entry=False, horizontal=True):
+        self._init()
+        return self.window.Ask(msg, b_accept, b_decline, entry, horizontal)
+
 
 class TextWindow(BaseWindow):
     def __init__(self, config):
@@ -352,7 +539,10 @@ class TextWindow(BaseWindow):
         rely = 0.333
         relHeight = 0.25
         inc=1
-        self.canvas.create_text(x, y, text=msg, fill=self.fg.hex_l, font=self.h3, anchor='center')
+        #if self.msg is set, it is used
+        if len(self.msg) > 0:
+            msg = self.msg
+        self.text = self.canvas.create_text(x, y, text=msg, fill=self.txt_color.hex_l, font=self.h3, anchor='center')
         self.root.mainloop()
         return self
 
@@ -372,7 +562,7 @@ class ChoiceWindow(BaseWindow):
         rely = 0.333
         relHeight = 0.25
         inc=1
-        self.canvas.create_text(self.width/2, y, text=msg, fill=self.fg.hex_l, font=self.h3, anchor='center')
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.txt_color.hex_l, font=self.h3, anchor='center')
         if entry:
             rely=0.3
             relHeight=0.2
@@ -432,7 +622,7 @@ class MultiTextChoiceWindow(ChoiceWindow):
         rely = 0.25
         relHeight = 0.2
         inc=2
-        self.canvas.create_text(self.width/2, y, text=msg, fill=self.fg.hex_l, font=self.h3, anchor='center')
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.txt_color.hex_l, font=self.h3, anchor='center')
         self.entry = self.add_entry(True)
         self.entry.place(x = self.width/2-((self.width/2)*0.85), rely = rely, relheight=0.4, relwidth = 0.85)
         rely=0.23
@@ -453,7 +643,7 @@ class CopyTextWindow(ChoiceWindow):
         rely = 0.25
         relHeight = 0.2
         inc=2
-        self.canvas.create_text(self.width/2, y, text=msg, fill=self.fg.hex_l, font=self.h3, anchor='center')
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.txt_color.hex_l, font=self.h3, anchor='center')
         self.entry = self.add_entry(True)
         self.entry.place(x = self.width/2-((self.width/2)*0.95), rely = rely, relheight=0.4, relwidth = 0.95)
         rely=0.23
@@ -461,7 +651,6 @@ class CopyTextWindow(ChoiceWindow):
         self._add_buttons(b_accept, b_decline, 0.7, 0.2)
 
         if entryTxt != '':
-            print(self.entry)
             self.entry.insert('0.0',entryTxt)
 
         self.root.mainloop()
@@ -512,10 +701,10 @@ class UserPasswordWindow(ChoiceWindow):
         labely = self.height*rely+self.font[1]
         inc=2
 
-        self.canvas.create_text(self.width/2, y, text=msg, fill=self.fg.hex_l, font=self.h3, anchor='center')
-        self.canvas.create_text(x, labely, text='  USER  ', fill=self.fg.hex_l, font=self.font, anchor='e')
-        self.canvas.create_text(x, labely*1.45, text='PASSWORD', fill=self.fg.hex_l, font=self.font, anchor='e')
-        self.canvas.create_text(x, labely*1.85, text='CONFIRM ', fill=self.fg.hex_l, font=self.font, anchor='e')
+        self.canvas.create_text(self.width/2, y, text=msg, fill=self.txt_color.hex_l, font=self.h3, anchor='center')
+        self.canvas.create_text(x, labely, text='  USER  ', fill=self.txt_color.hex_l, font=self.font, anchor='e')
+        self.canvas.create_text(x, labely*1.45, text='PASSWORD', fill=self.txt_color.hex_l, font=self.font, anchor='e')
+        self.canvas.create_text(x, labely*1.85, text='CONFIRM ', fill=self.txt_color.hex_l, font=self.font, anchor='e')
         self.user = self.add_entry()
         self.user.place(x = x*1.1, rely = rely, relwidth = 0.6)
         self.pw = self.add_entry()
