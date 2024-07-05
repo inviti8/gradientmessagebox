@@ -1,4 +1,4 @@
-from gradientmessagebox import  ColorConfig, BaseWindow, ChoiceWindow, PresetChoiceWindow, MultiTextChoiceWindow, CopyTextWindow, UserPasswordWindow, TextWindow, ThreadedWindow, PresetLoadingMessage
+from gradientmessagebox import  ColorConfig, BaseWindow, ChoiceWindow, PresetChoiceWindow, PresetUserPasswordWindow, PresetCopyTextWindow, MultiTextChoiceWindow, CopyTextWindow, UserPasswordWindow, TextWindow, ThreadedWindow, PresetLoadingMessage
 import time
 
 #config = ColorConfig(450, 300)
@@ -23,12 +23,14 @@ bar_config.animation(20, 1)
 #win = UserPasswordWindow(config)
 #win = ThreadedWindow(TextWindow, bar_config, 'HEAVYMETA')
 # win = PresetLoadingMessage('LOADING')
-win = PresetChoiceWindow()
+#win = PresetChoiceWindow()
+#win = PresetCopyTextWindow()
+win = PresetUserPasswordWindow()
 # win.custom_txt_color('black')
 txt = '''this is a multi line string
 that is going to span multiple lines'''
 #win.Ask('Ask a question?')
-x = win.Ask('Ask a question?', '1', '2', True)
+x = win.Ask('txt', '1', '2')
 #x = win.Ask('Ask a question?', 'copy', 'cancel', txt)
 #x = win.Show()
 #win.Play()
