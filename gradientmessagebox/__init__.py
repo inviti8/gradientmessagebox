@@ -1,6 +1,6 @@
 """A Simple tkinter prompt window with a settable image background window, By: Fibo Metavinci"""
 
-__version__ = "0.2"
+__version__ = "0.3"
 
 import threading
 import tkinter
