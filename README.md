@@ -93,8 +93,29 @@ prompt = PresetChoiceEntryWindow('Why so Cool?', 'Enter', 'Nope')
 
 prompt.Ask()
 
-answer = choice.Ask()
-print(choice.response)
+answer = prompt.Ask()
+print(prompt.response))
+
+#Returns text entered into field
+#~"None of your business..."
+```
+
+&nbsp;
+
+**PresetChoiceEntryWindow:**
+
+```python
+'''
+Basic choice window with a drop down, an accept button, and a reject button.
+returns the drop down value, or reject button
+'''
+
+prompt = PresetDropDownWindow('How Cool?', 'Enter')
+
+prompt.DropDown(['Pretty cool', 'Cool', 'Huh?'])
+
+answer = prompt.Ask()
+print(prompt.response)
 
 #Returns text entered into field
 #~"None of your business..."
@@ -123,7 +144,7 @@ prompt.Ask()
 All window objects  text and color attributes can be configured, here are some examples:
 
 ```python
-popup = PresetChoiceWindow('Cool?''Cool?''Cool?''Cool?', 'Yup', 'Nope')
+popup = PresetChoiceWindow('Cool?', 'Yup', 'Nope')
 
 '''
 Add a header text to the popup
