@@ -63,6 +63,8 @@ returns the text of the clicked button
 
 prompt = PresetPromptWindow('You are kinda cool!', 'OK')
 prompt.Prompt()
+
+##no return
 ```
 
 **PresetChoiceWindow:**
@@ -76,7 +78,7 @@ returns the text of the clicked button
 choice = PresetChoiceWindow('Cool?', 'Yup', 'Nope')
 
 answer = choice.Ask()
-print(choice.response)
+print(answer.response)
 
 #~"Yup"
 ```
@@ -94,7 +96,7 @@ prompt = PresetChoiceEntryWindow('Why so Cool?', 'Enter', 'Nope')
 prompt.Ask()
 
 answer = prompt.Ask()
-print(prompt.response))
+print(answer.response))
 
 #Returns text entered into field
 #~"None of your business..."
@@ -112,10 +114,9 @@ returns the drop down value, or reject button
 
 prompt = PresetDropDownWindow('How Cool?', 'Enter')
 
-prompt.DropDown(['Pretty cool', 'Cool', 'Huh?'])
+answer = prompt.DropDown(['Pretty cool', 'Cool', 'Huh?'])
 
-answer = prompt.Ask()
-print(prompt.response)
+print(answer.response)
 
 #Returns text entered into field
 #~"None of your business..."
@@ -133,7 +134,9 @@ returns the text of the entry, or reject button
 
 prompt = PresetChoiceMultilineEntryWindow('Coolness details:', 'Enter', 'Nope')
 
-prompt.Ask()
+answer = prompt.Ask()
+
+print(answer.response)
 
 #Returns text entered into field
 #~"None of your business..."
