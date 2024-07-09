@@ -1,4 +1,4 @@
-from gradientmessagebox import  ColorConfig, BaseWindow, ChoiceWindow, PresetChoiceWindow, PresetImageBgMessage, PresetUserPasswordWindow, PresetCopyTextWindow, MultiTextChoiceWindow, CopyTextWindow, UserPasswordWindow, TextWindow, ThreadedWindow, PresetLoadingMessage
+from gradientmessagebox import  ColorConfig, BaseWindow, ChoiceWindow, PresetPromptWindow, PresetChoiceEntryWindow, PresetChoiceWindow, PresetImageBgMessage, PresetCopyTextWindow, PresetChoiceMultilineEntryWindow, CopyTextWindow, PresetUserPasswordWindow, TextWindow, ThreadedWindow, PresetLoadingMessage
 import time
 
 #config = ColorConfig(450, 300)
@@ -15,33 +15,52 @@ config.imagery('./hvym_3d_logo.png', './logo.png')
 
 config.animation(20, 4)
 bar_config.animation(20, 1)
-
+txt = '''this is a multi line string
+that is going to span multiple lines
+that is going to span multiple lines
+that is going to span multiple lines
+that is going to span multiple lines
+that is going to span multiple lines
+that is going to span multiple lines
+that is going to span multiple lines
+that is going to span multiple lines'''
 
 #win = ChoiceWindow(config)
 #win = MultiTextChoiceWindow(config)
 #win = CopyTextWindow(config)
 #win = UserPasswordWindow(config)
 #win = ThreadedWindow(TextWindow, bar_config, 'HEAVYMETA')
-# win = PresetLoadingMessage('LOADING')
-#win = PresetChoiceWindow()
-#win = PresetCopyTextWindow()
-win =  PresetImageBgMessage(msg='HEAVYMETA', bg_img='./hvym_3d_logo.png', logo_img='./logo.png')
-#win = PresetUserPasswordWindow()
+#win = PresetLoadingMessage('LOADING')
+cool='''
+Cool?
+
+'''
+text = '''A very simple tkinter prompt window
+ with an animated gradient background.'''
+#win = PresetChoiceWindow(cool, 'Yup', 'Nope')
+#win = PresetChoiceEntryWindow(txt, '1', '2')
+#win = PresetChoiceMultilineEntryWindow(txt, '1', '2')
+#win = PresetCopyTextWindow(txt, '1', '2')
+#win.default_entry_text('Some default text')
+#win =  PresetImageBgMessage(msg='HEAVYMETA', bg_img='./hvym_3d_logo.png', logo_img='./logo.png')
+#win = PresetUserPasswordWindow(txt, '1', '2')
+win = PresetPromptWindow(text)
 # win.custom_txt_color('black')
-txt = '''this is a multi line string
-that is going to span multiple lines'''
-#win.Ask('Ask a question?')
-#x = win.Ask('txt', '1', '2')
+win.set_title_text('GRADIENT MESSAGE BOX')
+#win.imagery('./hvym_3d_logo.png', './logo.png')
+#win.vertical_btns()
+x = win.Prompt()
+#x = win.Ask()
 #x = win.Ask('Ask a question?', 'copy', 'cancel', txt)
 #x = win.Show()
-win.Play()
+#win.Play()
 
 
 
-#print(x.response)
-time.sleep(10)
+print(x.response)
+#time.sleep(10)
 
-win.Close()
+#win.Close()
 # win.Stop()
 # print('GETS HERE')
 

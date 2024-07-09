@@ -91,8 +91,11 @@ class WidgetConfig:
         self.padding = padding
         self.font = (font, fontSize)
         self.h1 = (font, fontSize+9)
+        self.h1_outline = (font, fontSize+9, 'bold')
         self.h2 = (font, fontSize+6)
+        self.h2_outline = (font, fontSize+6, 'bold')
         self.h3 = (font, fontSize+3)
+        self.h3_outline = (font, fontSize+3, 'bold')
 
 class Config:
     def __init__(self, width=450, height=300, title=""):
@@ -122,6 +125,7 @@ class ColorConfig(Config):
         self.fg_color = Color(self.color1.hex_l)
         self.bg_color = Color(self.color2.hex_l)
         self.txt_color = None
+        self.text_outline_color = None
         limit = self.width
         if 'y' in direct:
             limit = self.height
@@ -131,9 +135,19 @@ class ColorConfig(Config):
         self.file = None
         self.icon_path = None
         self.icon_file = None
+        self.entry_text = None
+
+    def set_title_text(self, text):
+        self.title = text
+
+    def default_entry_text(self, text):
+        self.entry_text = text
 
     def custom_txt_color(self, color):
         self.txt_color = Color(color)
+
+    def custom_txt_outline_color(self, color):
+        self.txt_outline_color = Color(color)
 
     def invert(self):
         self.fg_color = Color(self.color2.hex_l)
@@ -210,13 +224,17 @@ class BaseWindow:
         self.stretch = config.stretch
         self.fg = config.fg_color
         self.txt_color = config.fg_color
+        self.txt_outline_color = config.bg_color
         if config.txt_color != None:
             self.txt_color = config.txt_color
+        if config.text_outline_color != None:
+            self.txt_outline_color = config.text_outline_color
         self.bg = config.bg_color
         self.mg = config.mg_color
         self.alpha = config.alpha
         self.direct = config.direct
         self.hasFrame = config.hasFrame
+        self.entry_text = config.entry_text
         self.file = None
         self.path = None
         self.icon_path = None
@@ -237,8 +255,13 @@ class BaseWindow:
         self.padding = self.widgetConfig.padding
         self.font = self.widgetConfig.font
         self.h1 = self.widgetConfig.h1
+        self.h1_outline = self.widgetConfig.h1_outline
         self.h2 = self.widgetConfig.h2
+        self.h2_outline = self.widgetConfig.h2_outline
         self.h3 = self.widgetConfig.h3
+        self.h3_outline = self.widgetConfig.h3_outline
+
+        self.btn_height = 50
 
         self.root = None
         self.canvas = None
@@ -268,10 +291,21 @@ class BaseWindow:
         bg.luminance = 0.75
         fg.luminance = 0.55
         ent = None
+        entry_type = 'Text'
         if multi:
             self.entry = tkinter.Text(self.canvas, bg=bg.hex_l,fg=fg.hex_l,  bd=0, highlightthickness=0, font=self.font)
         else:
+            entry_type = 'Entry'
             self.entry = tkinter.Entry(self.canvas, bg=bg.hex_l,fg=fg.hex_l,  bd=0, highlightthickness=0, font=self.font)
+
+        if self.entry_text != None:
+            if entry_type == 'Text':
+                self.entry.tag_configure("tag_center", justify='center')
+                self.entry.insert('0.0', self.entry_text)
+                self.entry.tag_add("tag_center", "1.0", "end")
+            else:
+                self.entry.insert(tkinter.END, self.entry_text)
+
         return self.entry  
 
     def entry_to_dict(self, dict_key):
@@ -434,6 +468,12 @@ class BaseConfigWindow:
     def has_frame(self, showFrame):
         self.config.has_frame(showFrame)
 
+    def default_entry_text(self, text):
+        self.config.default_entry_text(text)
+
+    def set_title_text(self, text):
+        self.config.set_title_text(text)
+
 
 class ThreadedWindow(BaseConfigWindow):
     def __init__(self, window, *args):
@@ -523,6 +563,20 @@ class PresetWindow(BaseConfigWindow):
     def _init(self):
         self.window = self._window(self.config, self.msg, self.b_accept, self.b_decline, self.entry, self.horizontal)
 
+    def vertical_btns(self):
+        self.horizontal = False
+
+
+class PresetPromptWindow(PresetWindow):
+    def __init__(self, msg, b_accept='OK'):
+        PresetWindow.__init__(self, ChoiceWindow, msg, b_accept, 'Close', False, True)
+        self.dimensions(width=450, height=250)
+        self.has_frame(showFrame=True)
+
+    def Prompt(self):
+        self._init()
+        return self.window.Prompt()
+
 
 class PresetChoiceWindow(PresetWindow):
     def __init__(self, msg, b_accept, b_decline):
@@ -559,26 +613,26 @@ class PresetChoiceMultilineEntryWindow(PresetWindow):
 
 
 class PresetCopyTextWindow(PresetWindow):
-    def __init__(self, msg):
-        PresetWindow.__init__(self, CopyTextWindow, msg)
+    def __init__(self, msg, b_accept, b_decline):
+        PresetWindow.__init__(self, CopyTextWindow, msg, b_accept, b_decline, True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
 
-    def Ask(self, msg, b_accept='Copy', b_decline='Cancel', entry_text=''):
+    def Ask(self):
         self._init()
-        return self.window.Ask(b_accept, b_decline, entry_text)
+        return self.window.Ask()
 
 
 class PresetUserPasswordWindow(PresetWindow):
-    def __init__(self, msg):
-        PresetWindow.__init__(self, UserPasswordWindow, msg)
+    def __init__(self, msg, b_accept, b_decline):
+        PresetWindow.__init__(self, UserPasswordWindow, msg, b_accept, b_decline, True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
         self.msg = msg
 
-    def Ask(self, b_accept='Login', b_decline='Cancel'):
+    def Ask(self):
         self._init()
-        return self.window.Ask(msg, b_accept, b_decline, True)
+        return self.window.Ask()
 
 
 class TextWindow(BaseWindow):
@@ -617,15 +671,30 @@ class ChoiceWindow(BaseWindow):
         self.max_height = 900
         self.line_spacing = 0.03
         self.msg_y = self.max_height*self.line_spacing
+        self.inc = 1
+
+        if self.title != None and len(self.title)>0:
+            self.title_y = self.max_height*(self.line_spacing/2)
+            self.msg_y = self.max_height*(self.line_spacing*2)
+            self.inc+=2
         
         if self.entry:
-            self.entry_y = self.max_height*(self.line_spacing*(self.num_lines+2))
+            self.entry_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+            self.inc+=2
         if self.horizontal:
-            self.btn_y = self.max_height*(self.line_spacing*(self.num_lines+4))
-            self.height = (self.max_height+50)*(self.line_spacing*(self.num_lines+6))
+            self.btn_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+            self.inc+=2
+            self.height = (self.max_height+self.btn_height)*(self.line_spacing*(self.num_lines+self.inc))
+        if not self.horizontal:
+            self.btn_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+            self.inc+=2
+            self.btn_y2 = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+            self.inc+=2
+            self.height = (self.max_height+self.btn_height)*(self.line_spacing*(self.num_lines+self.inc))
 
     def Ask(self):
         self._Show()
+        self._add_title()
         
         self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
 
@@ -636,29 +705,51 @@ class ChoiceWindow(BaseWindow):
         if self.horizontal:
             self._add_horizontal_buttons(self.b_accept, self.b_decline, self.btn_y)
         else:
-            self._add_vertical_buttons(self.b_accept, self.b_decline, rely, relHeight, inc)
+            self._add_vertical_buttons(self.b_accept, self.b_decline, self.btn_y, self.btn_y2)
         self.root.mainloop()
         return self
-        
-    def _add_vertical_buttons(self, b_accept, b_decline, rely=0.333, relHeight=0.8, inc=1):
-        b_accept = self.add_choice_btn(b_accept)
-        b_decline = self.add_choice_btn(b_decline)
-        b_accept.place(x = self.width/2-((self.width/2)*0.8), rely = rely*inc, relheight = relHeight, relwidth = 0.75)
-        b_decline.place(x = self.width/2-((self.width/2)*0.8), rely = rely*(inc+1), relheight = relHeight, relwidth = 0.75)
-        self.configure_btns()
 
-    def _add_horizontal_buttons(self, b_accept, b_decline, rely=0.75, relheight=0.22):
+    def Prompt(self):
+        self._Show()
+        self._add_title()
+        
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
+        self._add_single_button(self.b_accept, self.btn_y)
+        self.root.mainloop()
+        return self
+
+    def _add_title(self):
+        if self.title != None and len(self.title)>0:
+            self.canvas.create_text(self.width/2, self.title_y, text=self.title, fill=self.txt_color.hex_l, font=self.h1, anchor='n')
+
+    def _add_single_button(self, b_accept, y):
+        self.b_accept = self.add_choice_btn(b_accept)
+        self.b_accept['command'] = self.action_accept
+        self.b_accept.place(x = self.width/2-((self.width/2)*0.8), y = y, height = self.btn_height, relwidth = 0.75)
+
+        self.configure_btns()
+        
+    def _add_vertical_buttons(self, b_accept, b_decline, y, y2):
         self.b_accept = self.add_choice_btn(b_accept)
         self.b_accept['command'] = self.action_accept
         self.b_decline = self.add_choice_btn(b_decline)
         self.b_decline['command'] = self.action_decline
-        self.b_accept.place(x = self.padding[0], y = rely, height = 50, relwidth = 0.45, anchor='nw')
-        self.b_decline.place(x = (self.width-(self.width*0.45))-self.padding[0], y = rely, height = 50, relwidth = 0.45, anchor='nw')
+        self.b_accept.place(x = self.width/2-((self.width/2)*0.8), y = y, height = self.btn_height, relwidth = 0.75)
+        self.b_decline.place(x = self.width/2-((self.width/2)*0.8), y = y2, height = self.btn_height, relwidth = 0.75)
+        self.configure_btns()
+
+    def _add_horizontal_buttons(self, b_accept, b_decline, y):
+        self.b_accept = self.add_choice_btn(b_accept)
+        self.b_accept['command'] = self.action_accept
+        self.b_decline = self.add_choice_btn(b_decline)
+        self.b_decline['command'] = self.action_decline
+        self.b_accept.place(x = self.padding[0], y = y, height = self.btn_height, relwidth = 0.45, anchor='nw')
+        self.b_decline.place(x = (self.width-(self.width*0.45))-self.padding[0], y = y, height = self.btn_height, relwidth = 0.45, anchor='nw')
         self.configure_btns()
 
     def action_accept(self, event=None):
         self.root.quit()
-        if self.entry != None:
+        if self.entry != None and self.entry != False:
             self.response = self.entry.get()
         else:
             self.response = self.b_accept.cget('text')
@@ -672,67 +763,71 @@ class ChoiceWindow(BaseWindow):
         self.root.destroy()
 
 
-
 class MultiTextChoiceWindow(ChoiceWindow):
-    def __init__(self, config, msg, b_accept, b_decline, entry=False, horizontal=True):
+    def __init__(self, config, msg, b_accept, b_decline, entry=True, horizontal=True):
         ChoiceWindow.__init__(self, config, msg, b_accept, b_decline, entry, horizontal)
         if self.entry:
-            self.entry_y = self.max_height*(self.line_spacing*(self.num_lines+2))
-            self.entry_height = self.max_height*(self.line_spacing*(self.num_lines+6))
+            self.entry_height = self.max_height*(self.line_spacing*4)
+            self.inc+=1
         if self.horizontal:
-            self.btn_y = self.max_height*(self.line_spacing*(self.num_lines+10))
-            self.height = (self.max_height+50)*(self.line_spacing*(self.num_lines+12))
+            self.btn_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+            self.inc+=2
+            self.height = (self.max_height+self.btn_height)*(self.line_spacing*(self.num_lines+self.inc))
+        if not self.horizontal:
+            self.btn_y = self.max_height*(self.line_spacing*(self.num_lines+6))
+            self.btn_y2 = self.max_height*(self.line_spacing*(self.num_lines+8))
+            self.height = (self.max_height+self.btn_height)*(self.line_spacing*(self.num_lines+10))
 
     def Ask(self):
         self._Show()
-        x = self.padding[0]
-        y = self.height*0.08
-        rely = 0.25
-        relHeight = 0.2
-        inc=2
+        self._add_title()
         self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
         self.entry = self.add_entry(True)
         self.entry.place(x = self.width/2-((self.width/2)*0.85), y = self.entry_y, height=self.entry_height, relwidth = 0.85, anchor='nw')
-        rely=0.23
 
-        self._add_horizontal_buttons(self.b_accept, self.b_decline, self.btn_y)
+        if self.horizontal:
+            self._add_horizontal_buttons(self.b_accept, self.b_decline, self.btn_y)
+        else:
+            self._add_vertical_buttons(self.b_accept, self.b_decline, self.btn_y, self.btn_y2)
 
         self.root.mainloop()
         return self
 
-class CopyTextWindow(ChoiceWindow):
-    def __init__(self, config, msg):
-        ChoiceWindow.__init__(self, config, msg)
+class CopyTextWindow(MultiTextChoiceWindow):
+    def __init__(self, config, msg, b_accept, b_decline, entry=True, horizontal=True):
+        MultiTextChoiceWindow.__init__(self, config, msg, b_accept, b_decline, entry, horizontal)
 
-    def Ask(self, b_accept='Copy', b_decline='Cancel', entryTxt=''):
+    def Ask(self):
         self._Show()
-        x = self.padding[0]
-        y = self.height*0.12
-        rely = 0.25
-        relHeight = 0.2
-        inc=2
-        self.canvas.create_text(self.width/2, y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='center')
+        self._add_title()
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
         self.entry = self.add_entry(True)
-        self.entry.place(x = self.width/2-((self.width/2)*0.95), rely = rely, relheight=0.4, relwidth = 0.95)
-        rely=0.23
+        self.entry.place(x = self.width/2-((self.width/2)*0.95), y = self.entry_y, height=self.entry_height, relwidth = 0.95, anchor='nw')
 
-        self._add_buttons(b_accept, b_decline, 0.7, 0.2)
-
-        if entryTxt != '':
-            self.entry.tag_configure("tag_center", justify='center')
-            self.entry.insert('0.0',entryTxt)
-            self.entry.tag_add("tag_center", "1.0", "end")
+        if self.horizontal:
+            self._add_horizontal_copy_buttons(self.b_accept, self.b_decline, self.btn_y)
+        else:
+            self._add_vertical_copy_buttons(self.b_accept, self.b_decline, self.btn_y, self.btn_y2)
 
         self.root.mainloop()
         return self
 
-    def _add_buttons(self, b_accept, b_decline, rely=0.55, relheight=0.333):
+    def _add_horizontal_copy_buttons(self, b_accept, b_decline, y):
         self.b_accept = self.add_choice_btn(b_accept)
         self.b_accept['command'] = self.action_copy_text
         self.b_decline = self.add_choice_btn(b_decline)
         self.b_decline['command'] = self.action_decline
-        self.b_accept.place(x = self.padding[0], rely = rely, relheight = relheight, relwidth = 0.45)
-        self.b_decline.place(x = (self.width-(self.width*0.45))-self.padding[0], rely = rely, relheight = relheight, relwidth = 0.45)
+        self.b_accept.place(x = self.padding[0], y = y, height = self.btn_height, relwidth = 0.45, anchor='nw')
+        self.b_decline.place(x = (self.width-(self.width*0.45))-self.padding[0], y = y, height = self.btn_height, relwidth = 0.45, anchor='nw')
+        self.configure_btns()
+
+    def _add_vertical_copy_buttons(self, b_accept, b_decline, y, y2):
+        self.b_accept = self.add_choice_btn(b_accept)
+        self.b_accept['command'] = self.action_copy_text
+        self.b_decline = self.add_choice_btn(b_decline)
+        self.b_decline['command'] = self.action_decline
+        self.b_accept.place(x = self.padding[0], y = y, height = self.btn_height, relwidth = 0.45, anchor='nw')
+        self.b_decline.place(x = (self.width-(self.width*0.45))-self.padding[0], y = y2, height = self.btn_height, relwidth = 0.45, anchor='nw')
         self.configure_btns()
 
     def action_copy_text(self, event=None):
@@ -754,47 +849,53 @@ class CopyTextWindow(ChoiceWindow):
 
 
 class UserPasswordWindow(ChoiceWindow):
-    def __init__(self, config, msg):
-        ChoiceWindow.__init__(self, config, msg)
+    def __init__(self, config, msg, b_accept, b_decline, entry=True, horizontal=True):
+        ChoiceWindow.__init__(self, config, msg, b_accept, b_decline, entry, horizontal)
         self.user = None
         self.pw = None
         self.confirm_pw = None
+        self.inc-=4
+        self.entry_user_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+        self.inc+=2
+        self.entry_pw_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+        self.inc+=1
+        self.entry_confirm_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+        self.inc+=2
+        self.btn_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+        self.inc+=2
+        self.height = (self.max_height+self.btn_height)*(self.line_spacing*(self.num_lines+self.inc))
 
-    def Ask(self, b_accept='LOGIN', b_decline='Cancel', horizontal=True):
+    def Ask(self):
         self._Show()
+        self._add_title()
         bullet = "\u25CF"
         startx = ((self.width/2)*0.58)
         x = self.width/2-startx
-        y = self.height*0.11
-        rely = 0.25
-        relHeight = 0.2
-        labely = self.height*rely+self.font[1]
-        inc=2
+        x_shft_lable = 1.25
+        x_shft_entry = 1.35
 
-        self.canvas.create_text(self.width/2, y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='center')
-        self.canvas.create_text(x, labely, text='  USER  ', fill=self.txt_color.hex_l, font=self.font, anchor='e')
-        self.canvas.create_text(x, labely*1.45, text='PASSWORD', fill=self.txt_color.hex_l, font=self.font, anchor='e')
-        self.canvas.create_text(x, labely*1.85, text='CONFIRM ', fill=self.txt_color.hex_l, font=self.font, anchor='e')
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
+        self.canvas.create_text(x*x_shft_lable, self.entry_user_y, text='  USER  ', fill=self.txt_color.hex_l, font=self.font, anchor='ne')
+        self.canvas.create_text(x*x_shft_lable, self.entry_pw_y, text='PASSWORD', fill=self.txt_color.hex_l, font=self.font, anchor='ne')
+        self.canvas.create_text(x*x_shft_lable, self.entry_confirm_y, text='CONFIRM ', fill=self.txt_color.hex_l, font=self.font, anchor='ne')
         self.user = self.add_entry()
-        self.user.place(x = x*1.1, rely = rely, relwidth = 0.6)
+        self.user.place(x = x*x_shft_entry, y = self.entry_user_y, relwidth = 0.6)
         self.pw = self.add_entry()
         self.pw['show'] = bullet
-        self.pw.place(x = x*1.1, rely = rely*1.5, relwidth = 0.6)
+        self.pw.place(x = x*x_shft_entry, y = self.entry_pw_y, relwidth = 0.6)
         self.confirm_pw = self.add_entry()
         self.confirm_pw['show'] = bullet
-        self.confirm_pw.place(x = x*1.1, rely = rely*2, relwidth = 0.6)
+        self.confirm_pw.place(x = x*x_shft_entry, y = self.entry_confirm_y, relwidth = 0.6)
 
-        rely=0.23
-
-        self._add_button(b_accept, 0.7, 0.2)
+        self._add_login_button(self.b_accept, self.btn_y)
 
         self.root.mainloop()
         return self
 
-    def _add_button(self, b_accept, rely=0.55, relheight=0.333):
+    def _add_login_button(self, b_accept, y):
         self.b_accept = self.add_choice_btn(b_accept)
         self.b_accept['command'] = self.action_login
-        self.b_accept.place(x = self.width/2-((self.width/2)*0.8), rely = rely, relheight = relheight, relwidth = 0.75)
+        self.b_accept.place(x = self.width/2-((self.width/2)*0.8), y = y, height = self.btn_height, relwidth = 0.75)
 
         self.configure_btns()
 
