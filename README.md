@@ -1,5 +1,7 @@
 # gradient message box
 
+<img src="https://github.com/inviti8/gradientmessagebox/blob/main/gradientmessagebox_img.png?raw=true" alt="gradientmessagebox_img.png" width="536" height="319">
+
 A very simple tkinter prompt window with an animated gradient background.
 
 Installation:
@@ -11,13 +13,17 @@ pip install gradientmessagebox
 Several Presets that require basic configuration:
 
 ```python
-from gradientmessagebox import ColorConfig, PresetLoadingMessage, PresetImageBgMessage, PresetChoiceWindow, PresetChoiceEntryWindow, PresetMultiTextChoice, PresetCopyTextWindow, PresetUserPasswordWindow
+from gradientmessagebox import ColorConfig, PresetPromptWindow, PresetLoadingMessage, PresetImageBgMessage, PresetChoiceWindow, PresetChoiceEntryWindow, PresetChoiceMultilineEntryWindow, PresetCopyTextWindow, PresetUserPasswordWindow
 ```
 
-**PresetLoadingMessage:**
+**PresetLoadingMessage:**  
+<img src="https://github.com/inviti8/gradientmessagebox/blob/main/loading.png?raw=true" alt="loading.png" width="400" height="107">
 
 ```python
-'''Basic loading indicator that can create a custom Loading message, plays a simple text animation.'''
+'''
+Basic loading indicator that can create a custom Loading message, plays a simple text animation.
+shows without a frame, must be closed in code.
+'''
 
 loading = PresetLoadingMessage('LOADING')
 
@@ -28,18 +34,35 @@ time.sleep(10)
 loading.Close()
 ```
 
-**PresetIageBackgroundImage:**
+**PresetImageBgMessage:**
+
+<img src="https://github.com/inviti8/gradientmessagebox/blob/main/splash.png?raw=true" alt="loading.png" width="339" height="280">
 
 ```python
-'''Basic text pop up.'''
+'''
+Basic text pop up with a background image.
+shows without a frame, must be closed in code.
+'''
 
-loading = PresetImageBgMessage('SPLASH')
+splash = PresetImageBgMessage(msg='THE TITLE', bg_img='./bg_image.png', logo_img='./logo.png')
 
-loading.Show()
+splash.Show()
 
 time.sleep(10)
 
-loading.Close()
+splash.Close()
+```
+
+**PresetPromptWindow:**
+
+```python
+'''
+Basic choice window with an accept and a reject button.
+returns the text of the clicked button
+'''
+
+prompt = PresetPromptWindow('You are kinda cool!', 'OK')
+prompt.Prompt()
 ```
 
 **PresetChoiceWindow:**
@@ -50,9 +73,12 @@ Basic choice window with an accept and a reject button.
 returns the text of the clicked button
 '''
 
-loading = PresetChoiceWindow()
+choice = PresetChoiceWindow('Cool?', 'Yup', 'Nope')
 
-loading.Ask('Cool?', 'Yup', 'Nope')
+answer = choice.Ask()
+print(choice.response)
+
+#~"Yup"
 ```
 
 **PresetChoiceEntryWindow:**
@@ -63,9 +89,15 @@ Basic choice window with a text entry, an accept button, and a reject button.
 returns the text of the entry, or reject button
 '''
 
-prompt = PresetChoiceEntryWindow()
+prompt = PresetChoiceEntryWindow('Why so Cool?', 'Enter', 'Nope')
 
-propt.Ask('Why so Cool?', 'Enter', 'Nope')
+prompt.Ask()
+
+answer = choice.Ask()
+print(choice.response)
+
+#Returns text entered into field
+#~"None of your business..."
 ```
 
 &nbsp;
@@ -78,9 +110,12 @@ Basic choice window with a multi line text entry, and an accept and a reject but
 returns the text of the entry, or reject button
 '''
 
-prompt = PresetChoiceMultilineEntryWindow()
+prompt = PresetChoiceMultilineEntryWindow('Coolness details:', 'Enter', 'Nope')
 
-propt.Ask('Coolness details:', 'Enter', 'Nope')
+prompt.Ask()
+
+#Returns text entered into field
+#~"None of your business..."
 ```
 
 &nbsp;
@@ -88,7 +123,12 @@ propt.Ask('Coolness details:', 'Enter', 'Nope')
 All window objects  text and color attributes can be configured, here are some examples:
 
 ```python
-popup = PresetChoiceWindow()
+popup = PresetChoiceWindow('Cool?''Cool?''Cool?''Cool?', 'Yup', 'Nope')
+
+'''
+Add a header text to the popup
+'''
+win.set_title_text('QUIZ')
 
 '''After creating various attributes can be configured
 Here we lighten the foreground, and darken the background
@@ -96,8 +136,14 @@ By Default, foreground is the text color, and background is the widget surface c
 popup.fg_luminance(0.65)
 popup.bg_luminance(0.35)
 
+'''
+add a bg image & logo to the window
+'''
+
+window.imagery('./hvym_3d_logo.png', './logo.png')
+
 '''If you want to invert the foreground and background colors:'''
-config.invert()
+popup.invert()
 
 '''On instantiation a midground color is created, based on the
 the color that is halfway between the foreground and background.
