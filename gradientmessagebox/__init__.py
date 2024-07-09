@@ -1,6 +1,6 @@
-"""A Simple tkinter prompt window with a settable image background window, By: Fibo Metavinci"""
+"""A very simple tkinter prompt window with an animated gradient background, By: Fibo Metavinci"""
 
-__version__ = "0.6"
+__version__ = "0.7"
 
 import threading
 import tkinter
@@ -269,6 +269,7 @@ class BaseWindow:
         self.text = None
         self.entry = None
         self.btn1 = None
+        self.dropdown = None
         self.msg = ''
         self.animate = False
 
@@ -314,6 +315,22 @@ class BaseWindow:
             d, key = dict_key
             d[key] = data
             self.top.destroy()
+
+    def add_dropdown(self, arr):
+        self.dropdown_val = tkinter.StringVar(self.root)
+        self.dropdown_val.set(arr[0]) # default value
+        hlt_bg = Color(self.bg.hex_l)
+        hlt_fg = Color(self.txt_color.hex_l)
+        hlt_bg.luminance = 0.45
+        hlt_fg.luminance = 0.75
+
+        self.dropdown = tkinter.OptionMenu(self.canvas, self.dropdown_val, *arr)
+        self.dropdown.configure(bg=self.txt_color.hex_l, fg=self.bg.hex_l, highlightthickness=0, activebackground=hlt_fg.hex_l, activeforeground=hlt_bg.hex_l, font=self.h3, bd=0)
+        self.dropdown['menu'].configure(bg=self.txt_color.hex_l, fg=self.bg.hex_l, activebackground=hlt_fg.hex_l, activeforeground=hlt_bg.hex_l, font=self.h3, bd=0)
+
+        self.dropdown.pack()
+
+        return self.dropdown
 
     def update_canvas_text(self, text):
         self.canvas.itemconfigure(self.text, text=text)
@@ -579,7 +596,7 @@ class PresetPromptWindow(PresetWindow):
 
 
 class PresetChoiceWindow(PresetWindow):
-    def __init__(self, msg, b_accept, b_decline):
+    def __init__(self, msg, b_accept='OK', b_decline='CANCEL'):
         PresetWindow.__init__(self, ChoiceWindow, msg, b_accept, b_decline, False, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
@@ -590,7 +607,7 @@ class PresetChoiceWindow(PresetWindow):
 
 
 class PresetChoiceEntryWindow(PresetWindow):
-    def __init__(self, msg, b_accept, b_decline):
+    def __init__(self, msg, b_accept='OK', b_decline='CANCEL'):
         PresetWindow.__init__(self, ChoiceWindow, msg, b_accept, b_decline, True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
@@ -600,8 +617,19 @@ class PresetChoiceEntryWindow(PresetWindow):
         return self.window.Ask()
 
 
+class PresetDropDownWindow(PresetWindow):
+    def __init__(self, msg, b_accept='OK'):
+        PresetWindow.__init__(self, ChoiceWindow, msg, b_accept, 'CANCEL', True, True)
+        self.dimensions(width=450, height=250)
+        self.has_frame(showFrame=True)
+
+    def DropDown(self, arr):
+        self._init()
+        return self.window.DropDown(arr)
+
+
 class PresetChoiceMultilineEntryWindow(PresetWindow):
-    def __init__(self, msg, b_accept, b_decline):
+    def __init__(self, msg, b_accept='OK', b_decline='CANCEL'):
         PresetWindow.__init__(self, MultiTextChoiceWindow, msg, b_accept, b_decline, True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
@@ -613,7 +641,7 @@ class PresetChoiceMultilineEntryWindow(PresetWindow):
 
 
 class PresetCopyTextWindow(PresetWindow):
-    def __init__(self, msg, b_accept, b_decline):
+    def __init__(self, msg, b_accept='COPY', b_decline='CANCEL'):
         PresetWindow.__init__(self, CopyTextWindow, msg, b_accept, b_decline, True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
@@ -624,7 +652,7 @@ class PresetCopyTextWindow(PresetWindow):
 
 
 class PresetUserPasswordWindow(PresetWindow):
-    def __init__(self, msg, b_accept, b_decline):
+    def __init__(self, msg, b_accept='GO', b_decline='CANCEL'):
         PresetWindow.__init__(self, UserPasswordWindow, msg, b_accept, b_decline, True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
@@ -677,7 +705,6 @@ class ChoiceWindow(BaseWindow):
             self.title_y = self.max_height*(self.line_spacing/2)
             self.msg_y = self.max_height*(self.line_spacing*2)
             self.inc+=2
-        
         if self.entry:
             self.entry_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
             self.inc+=2
@@ -718,6 +745,19 @@ class ChoiceWindow(BaseWindow):
         self.root.mainloop()
         return self
 
+    def DropDown(self, arr):
+        self._Show()
+        self._add_title()
+        
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
+
+        self.dropdown = self.add_dropdown(arr)
+        self.dropdown.place(x = self.width/2, y = self.entry_y, relwidth = 0.65, anchor='n')
+
+        self._add_single_button(self.b_accept, self.btn_y)
+        self.root.mainloop()
+        return self
+
     def _add_title(self):
         if self.title != None and len(self.title)>0:
             self.canvas.create_text(self.width/2, self.title_y, text=self.title, fill=self.txt_color.hex_l, font=self.h1, anchor='n')
@@ -750,7 +790,10 @@ class ChoiceWindow(BaseWindow):
     def action_accept(self, event=None):
         self.root.quit()
         if self.entry != None and self.entry != False:
-            self.response = self.entry.get()
+            if self.dropdown != None and self.dropdown != False:
+                self.response = self.dropdown_val.get()
+            else:
+                self.response = self.entry.get()
         else:
             self.response = self.b_accept.cget('text')
             self.root.quit()
