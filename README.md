@@ -102,7 +102,7 @@ print(prompt.response))
 
 &nbsp;
 
-**PresetChoiceEntryWindow:**
+**PresetDropDownWindow:**
 
 ```python
 '''
