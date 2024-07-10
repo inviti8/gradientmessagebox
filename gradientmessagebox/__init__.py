@@ -1,6 +1,6 @@
 """A very simple tkinter prompt window with an animated gradient background, By: Fibo Metavinci"""
 
-__version__ = "0.9"
+__version__ = "1.0"
 
 import threading
 import tkinter
@@ -477,11 +477,11 @@ class BaseConfigWindow:
     def fg_luminance(self, luminance):
         self.config.fg_saturation(luminance)
 
-    def bg_luminance(self, saturation):
-        self.config.bg_saturation(luminance)
+    def bg_luminance(self, luminance):
+        self.config.bg_luminance(luminance)
 
-    def mg_luminance(self, saturation):
-        self.config.mg_saturation(luminance)
+    def mg_luminance(self, luminance):
+        self.config.mg_luminance(luminance)
 
     def custom_txt_color(self, color):
         self.config.custom_txt_color(color)
