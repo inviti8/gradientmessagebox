@@ -5,7 +5,7 @@ with open("README.md", "r", encoding = "utf-8") as fh:
 
 setuptools.setup(
     name = "gradientmessagebox",
-    version = "0.0.8",
+    version = "0.0.9",
     author = "Fibo Metavinci",
     author_email = "pszdw-75nat-5227i-bha5s-y7lai-pebdq-o2agp-3xho4-hd6z6-emxrd-nqe@dmail.ai",
     description = "A very simple tkinter prompt window with a settable image background.",

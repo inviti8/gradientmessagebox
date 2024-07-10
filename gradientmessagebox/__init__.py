@@ -1,6 +1,6 @@
 """A very simple tkinter prompt window with an animated gradient background, By: Fibo Metavinci"""
 
-__version__ = "0.8"
+__version__ = "0.9"
 
 import threading
 import tkinter
@@ -125,6 +125,7 @@ class ColorConfig(Config):
         self.fg_color = Color(self.color1.hex_l)
         self.bg_color = Color(self.color2.hex_l)
         self.txt_color = None
+        self.msg_color = None
         self.text_outline_color = None
         limit = self.width
         if 'y' in direct:
@@ -145,6 +146,9 @@ class ColorConfig(Config):
 
     def custom_txt_color(self, color):
         self.txt_color = Color(color)
+
+    def custom_msg_color(self, color):
+        self.msg_color = Color(color)
 
     def custom_txt_outline_color(self, color):
         self.txt_outline_color = Color(color)
@@ -223,12 +227,15 @@ class BaseWindow:
         self.speed = config.speed
         self.stretch = config.stretch
         self.fg = config.fg_color
+        self.msg_color = config.fg_color
         self.txt_color = config.fg_color
         self.txt_outline_color = config.bg_color
         if config.txt_color != None:
             self.txt_color = config.txt_color
         if config.text_outline_color != None:
             self.txt_outline_color = config.text_outline_color
+        if config.msg_color != None:
+            self.msg_color = config.msg_color
         self.bg = config.bg_color
         self.mg = config.mg_color
         self.alpha = config.alpha
@@ -479,6 +486,9 @@ class BaseConfigWindow:
     def custom_txt_color(self, color):
         self.config.custom_txt_color(color)
 
+    def custom_msg_color(self, color):
+        self.config.custom_msg_color(color)
+
     def saturation(self, saturation):
         self.config.saturation = saturation
 
@@ -677,7 +687,7 @@ class TextWindow(BaseWindow):
         #if self.msg is set, it is used
         if len(self.msg) > 0:
             msg = self.msg
-        self.text = self.canvas.create_text(x, y, text=msg, fill=self.txt_color.hex_l, font=self.h3, anchor='center')
+        self.text = self.canvas.create_text(x, y, text=msg, fill=self.msg_color.hex_l, font=self.h3, anchor='center')
         self.root.mainloop()
         return self
 
@@ -723,7 +733,7 @@ class ChoiceWindow(BaseWindow):
         self._Show()
         self._add_title()
         
-        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.msg_color.hex_l, font=self.h3, anchor='n')
 
         if self.entry:
             self.entry = self.add_entry()
@@ -740,7 +750,7 @@ class ChoiceWindow(BaseWindow):
         self._Show()
         self._add_title()
         
-        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.msg_color.hex_l, font=self.h3, anchor='n')
         self._add_single_button(self.b_accept, self.btn_y)
         self.root.mainloop()
         return self
@@ -749,7 +759,7 @@ class ChoiceWindow(BaseWindow):
         self._Show()
         self._add_title()
         
-        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.msg_color.hex_l, font=self.h3, anchor='n')
 
         self.dropdown = self.add_dropdown(arr)
         self.dropdown.place(x = self.width/2, y = self.entry_y, relwidth = 0.65, anchor='n')
@@ -760,7 +770,7 @@ class ChoiceWindow(BaseWindow):
 
     def _add_title(self):
         if self.title != None and len(self.title)>0:
-            self.canvas.create_text(self.width/2, self.title_y, text=self.title, fill=self.txt_color.hex_l, font=self.h1, anchor='n')
+            self.canvas.create_text(self.width/2, self.title_y, text=self.title, fill=self.msg_color.hex_l, font=self.h1, anchor='n')
 
     def _add_single_button(self, b_accept, y):
         self.b_accept = self.add_choice_btn(b_accept)
@@ -824,7 +834,7 @@ class MultiTextChoiceWindow(ChoiceWindow):
     def Ask(self):
         self._Show()
         self._add_title()
-        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.msg_color.hex_l, font=self.h3, anchor='n')
         self.entry = self.add_entry(True)
         self.entry.place(x = self.width/2-((self.width/2)*0.85), y = self.entry_y, height=self.entry_height, relwidth = 0.85, anchor='nw')
 
@@ -843,7 +853,7 @@ class CopyTextWindow(MultiTextChoiceWindow):
     def Ask(self):
         self._Show()
         self._add_title()
-        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.msg_color.hex_l, font=self.h3, anchor='n')
         self.entry = self.add_entry(True)
         self.entry.place(x = self.width/2-((self.width/2)*0.95), y = self.entry_y, height=self.entry_height, relwidth = 0.95, anchor='nw')
 
@@ -874,7 +884,6 @@ class CopyTextWindow(MultiTextChoiceWindow):
         self.configure_btns()
 
     def action_copy_text(self, event=None):
-        self.root.quit()
         if self.entry != None:
             txt = self.entry.get('1.0', 'end')
             self.response = tkinter.messagebox.showinfo('Confirm', 'Text copied for 10 seconds')
@@ -914,10 +923,10 @@ class UserPasswordWindow(ChoiceWindow):
         x_shft_lable = 1.25
         x_shft_entry = 1.35
 
-        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.txt_color.hex_l, font=self.h3, anchor='n')
-        self.canvas.create_text(x*x_shft_lable, self.entry_user_y, text='  USER  ', fill=self.txt_color.hex_l, font=self.font, anchor='ne')
-        self.canvas.create_text(x*x_shft_lable, self.entry_pw_y, text='PASSWORD', fill=self.txt_color.hex_l, font=self.font, anchor='ne')
-        self.canvas.create_text(x*x_shft_lable, self.entry_confirm_y, text='CONFIRM ', fill=self.txt_color.hex_l, font=self.font, anchor='ne')
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.msg_color.hex_l, font=self.h3, anchor='n')
+        self.canvas.create_text(x*x_shft_lable, self.entry_user_y, text='  USER  ', fill=self.msg_color.hex_l, font=self.font, anchor='ne')
+        self.canvas.create_text(x*x_shft_lable, self.entry_pw_y, text='PASSWORD', fill=self.msg_color.hex_l, font=self.font, anchor='ne')
+        self.canvas.create_text(x*x_shft_lable, self.entry_confirm_y, text='CONFIRM ', fill=self.msg_color.hex_l, font=self.font, anchor='ne')
         self.user = self.add_entry()
         self.user.place(x = x*x_shft_entry, y = self.entry_user_y, relwidth = 0.6)
         self.pw = self.add_entry()

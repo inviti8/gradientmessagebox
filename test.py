@@ -38,28 +38,29 @@ Cool?
 text = '''A very simple tkinter prompt window
  with an animated gradient background.'''
 #win = PresetChoiceWindow(cool, 'Yup', 'Nope')
-win = PresetDropDownWindow(txt)
+#win = PresetDropDownWindow(txt)
 #win = PresetChoiceEntryWindow(txt, '1', '2')
 #win = PresetChoiceMultilineEntryWindow(txt, '1', '2')
-#win = PresetCopyTextWindow(txt, '1', '2')
-#win.default_entry_text('Some default text')
+win = PresetCopyTextWindow(txt)
+win.default_entry_text('Some default text')
 #win =  PresetImageBgMessage(msg='HEAVYMETA', bg_img='./hvym_3d_logo.png', logo_img='./logo.png')
 #win = PresetUserPasswordWindow(txt, '1', '2')
 #win = PresetPromptWindow(text)
 # win.custom_txt_color('black')
+win.custom_msg_color('pink')
 win.set_title_text('GRADIENT MESSAGE BOX')
 #win.imagery('./hvym_3d_logo.png', './logo.png')
 #win.vertical_btns()
 #x = win.Prompt()
-#x = win.Ask()
+x = win.Ask()
 #x = win.Ask('Ask a question?', 'copy', 'cancel', txt)
 #x = win.Show()
 #win.Play()
-x=win.DropDown(['1', '2', '3'])
+#x=win.DropDown(['1', '2', '3'])
 
 
 
-print(x.response)
+#print(x.response)
 #time.sleep(50)
 
 #win.Close()
