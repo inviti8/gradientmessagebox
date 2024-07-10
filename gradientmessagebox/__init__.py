@@ -1,6 +1,6 @@
 """A very simple tkinter prompt window with an animated gradient background, By: Fibo Metavinci"""
 
-__version__ = "0.7"
+__version__ = "0.8"
 
 import threading
 import tkinter
@@ -881,9 +881,6 @@ class CopyTextWindow(MultiTextChoiceWindow):
             thread = threading.Thread(target=self.copy_action, args=[txt])
             thread.setDaemon(True)
             thread.start()
-            self.root.quit()
-
-        self.root.destroy()
 
     def copy_action(self, text):
         pyperclip.copy(text)
