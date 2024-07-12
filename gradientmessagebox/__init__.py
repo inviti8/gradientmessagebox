@@ -1,11 +1,12 @@
 """A very simple tkinter prompt window with an animated gradient background, By: Fibo Metavinci"""
 
-__version__ = "1.0"
+__version__ = "1.1"
 
 import threading
 import tkinter
 from tkinter import font
 import tkinter.messagebox
+from tkinter.filedialog import askopenfilename
 from PIL import Image, ImageTk
 from pathlib import Path
 import sys
@@ -137,9 +138,14 @@ class ColorConfig(Config):
         self.icon_path = None
         self.icon_file = None
         self.entry_text = None
+        self.file_types = []
 
     def set_title_text(self, text):
         self.title = text
+
+    def set_file_select_types(self, arr):
+        '''pass array of file types like this: [("CSV Files", "*.csv"), ("Text Files", "*.txt"), ("All Files", "*.*")]'''
+        self.file_types = arr
 
     def default_entry_text(self, text):
         self.entry_text = text
@@ -242,6 +248,7 @@ class BaseWindow:
         self.direct = config.direct
         self.hasFrame = config.hasFrame
         self.entry_text = config.entry_text
+        self.file_types = config.file_types
         self.file = None
         self.path = None
         self.icon_path = None
@@ -501,6 +508,10 @@ class BaseConfigWindow:
     def set_title_text(self, text):
         self.config.set_title_text(text)
 
+    def set_file_select_types(self, arr):
+        '''pass array of file types like this: [("CSV Files", "*.csv"), ("Text Files", "*.txt"), ("All Files", "*.*")]'''
+        self.config.set_file_select_types( arr )
+
 
 class ThreadedWindow(BaseConfigWindow):
     def __init__(self, window, *args):
@@ -627,6 +638,18 @@ class PresetChoiceEntryWindow(PresetWindow):
         return self.window.Ask()
 
 
+class PresetFileSelectWindow(PresetWindow):
+    def __init__(self, msg, b_accept='BROWSE'):
+        PresetWindow.__init__(self, FileSelectWindow, msg, b_accept, 'CANCEL', True, True)
+        self.dimensions(width=450, height=250)
+        self.has_frame(showFrame=True)
+
+    def FileSelect(self):
+        self._init()
+
+        return self.window.FileSelect()
+
+
 class PresetDropDownWindow(PresetWindow):
     def __init__(self, msg, b_accept='OK'):
         PresetWindow.__init__(self, ChoiceWindow, msg, b_accept, 'CANCEL', True, True)
@@ -710,6 +733,7 @@ class ChoiceWindow(BaseWindow):
         self.line_spacing = 0.03
         self.msg_y = self.max_height*self.line_spacing
         self.inc = 1
+        self.file_types = config.file_types
 
         if self.title != None and len(self.title)>0:
             self.title_y = self.max_height*(self.line_spacing/2)
@@ -778,6 +802,13 @@ class ChoiceWindow(BaseWindow):
         self.b_accept.place(x = self.width/2-((self.width/2)*0.8), y = y, height = self.btn_height, relwidth = 0.75)
 
         self.configure_btns()
+
+    def _add_file_select_button(self, b_accept, y):
+        self.b_accept = self.add_choice_btn(b_accept)
+        self.b_accept['command'] = self.action_file_select
+        self.b_accept.place(x = self.width/2-((self.width/2)*0.8), y = y, height = self.btn_height, relwidth = 0.75)
+
+        self.configure_btns()
         
     def _add_vertical_buttons(self, b_accept, b_decline, y, y2):
         self.b_accept = self.add_choice_btn(b_accept)
@@ -797,6 +828,12 @@ class ChoiceWindow(BaseWindow):
         self.b_decline.place(x = (self.width-(self.width*0.45))-self.padding[0], y = y, height = self.btn_height, relwidth = 0.45, anchor='nw')
         self.configure_btns()
 
+    def action_file_select(self, event=None):
+        self.root.quit()
+        self.response = askopenfilename(filetypes=self.file_types)
+
+        self.root.destroy()
+
     def action_accept(self, event=None):
         self.root.quit()
         if self.entry != None and self.entry != False:
@@ -814,6 +851,33 @@ class ChoiceWindow(BaseWindow):
         self.response = self.b_decline.cget('text')
         self.root.quit()
         self.root.destroy()
+
+
+class FileSelectWindow(ChoiceWindow):
+    def __init__(self, config, msg, b_accept, b_decline, entry=False, horizontal=True):
+        ChoiceWindow.__init__(self, config, msg, b_accept, b_decline, entry, horizontal)
+        self.entry = None
+        self.inc = 2
+
+        if self.horizontal:
+            self.btn_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+            self.inc+=2
+            self.height = (self.max_height+self.btn_height)*(self.line_spacing*(self.num_lines+self.inc))
+        if not self.horizontal:
+            self.btn_y = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+            self.inc+=2
+            self.btn_y2 = self.max_height*(self.line_spacing*(self.num_lines+self.inc))
+            self.inc+=2
+            self.height = (self.max_height+self.btn_height)*(self.line_spacing*(self.num_lines+self.inc))
+
+    def FileSelect(self):
+        self._Show()
+        self._add_title()
+        
+        self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.msg_color.hex_l, font=self.h3, anchor='n')
+        self._add_file_select_button(self.b_accept, self.btn_y)
+        self.root.mainloop()
+        return self
 
 
 class MultiTextChoiceWindow(ChoiceWindow):
