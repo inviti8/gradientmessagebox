@@ -1,6 +1,6 @@
 """A very simple tkinter prompt window with an animated gradient background, By: Fibo Metavinci"""
 
-__version__ = "1.1"
+__version__ = "1.2"
 
 import threading
 import tkinter
@@ -408,7 +408,7 @@ class BaseWindow:
     def Close(self):
         self.animate = False
         self.canvas.Stop()
-        self.window.destroy()
+        #self.window.destroy()
         sys.stdout.flush()
         return
 

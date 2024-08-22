@@ -1,4 +1,4 @@
-from gradientmessagebox import  ColorConfig, BaseWindow, ChoiceWindow, PresetDropDownWindow, PresetPromptWindow, PresetChoiceEntryWindow, PresetChoiceWindow, PresetImageBgMessage, PresetCopyTextWindow, PresetChoiceMultilineEntryWindow, CopyTextWindow, PresetUserPasswordWindow, TextWindow, ThreadedWindow, PresetLoadingMessage
+from gradientmessagebox import  ColorConfig, BaseWindow, ChoiceWindow, PresetFileSelectWindow, PresetDropDownWindow, PresetPromptWindow, PresetChoiceEntryWindow, PresetChoiceWindow, PresetImageBgMessage, PresetCopyTextWindow, PresetChoiceMultilineEntryWindow, CopyTextWindow, PresetUserPasswordWindow, TextWindow, ThreadedWindow, PresetLoadingMessage
 import time
 
 #config = ColorConfig(450, 300)
@@ -41,30 +41,32 @@ text = '''A very simple tkinter prompt window
 #win = PresetDropDownWindow(txt)
 #win = PresetChoiceEntryWindow(txt, '1', '2')
 #win = PresetChoiceMultilineEntryWindow(txt, '1', '2')
-win = PresetCopyTextWindow(txt)
-win.default_entry_text('Some default text')
-#win =  PresetImageBgMessage(msg='HEAVYMETA', bg_img='./hvym_3d_logo.png', logo_img='./logo.png')
+#win = PresetCopyTextWindow(txt)
+#win = PresetFileSelectWindow(txt)
+#win.default_entry_text('Some default text')
+win =  PresetImageBgMessage(msg='HEAVYMETA', bg_img='./hvym_3d_logo.png', logo_img='./logo.png')
 #win = PresetUserPasswordWindow(txt, '1', '2')
 #win = PresetPromptWindow(text)
 # win.custom_txt_color('black')
-win.custom_msg_color('pink')
-win.set_title_text('GRADIENT MESSAGE BOX')
+#win.custom_msg_color('pink')
+#win.set_title_text('GRADIENT MESSAGE BOX')
+#win.set_file_select_types([("SVG Files", "*.svg"), ("PNG Files", "*.png")])
 #win.imagery('./hvym_3d_logo.png', './logo.png')
 #win.vertical_btns()
 #x = win.Prompt()
-x = win.Ask()
+#x = win.FileSelect()
 #x = win.Ask('Ask a question?', 'copy', 'cancel', txt)
 #x = win.Show()
-#win.Play()
+win.Play()
 #x=win.DropDown(['1', '2', '3'])
 
 
 
 #print(x.response)
-#time.sleep(50)
+time.sleep(50)
 
 #win.Close()
-#win.Stop()
+win.Stop()
 # print('GETS HERE')
 
 #win.Show()
