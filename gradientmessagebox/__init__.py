@@ -1,6 +1,6 @@
 """A very simple tkinter prompt window with an animated gradient background, By: Fibo Metavinci"""
 
-__version__ = "1.2"
+__version__ = "1.3"
 
 import threading
 import tkinter
@@ -587,11 +587,20 @@ class PresetImageBgMessage(PresetThreadedWindow):
         self.Close()
 
 
-class PresetWindow(BaseConfigWindow):
-    def __init__(self, _window, msg, b_accept, b_decline, entry, horizontal):
+class PresetDictWindow(BaseConfigWindow):
+    def __init__(self, _window, dictionary):
         BaseConfigWindow.__init__(self)
         self._window = _window
         self.window = None
+        self.dict = dictionary
+
+    def _init(self):
+        self.window = self._window(self.config, self.dict)
+
+
+class PresetWindow(BaseConfigWindow):
+    def __init__(self, _window, msg, b_accept, b_decline, entry, horizontal):
+        BaseConfigWindow.__init__(self, _window)
         self.msg = msg
         self.b_accept = b_accept
         self.b_decline = b_decline
@@ -696,6 +705,17 @@ class PresetUserPasswordWindow(PresetWindow):
         return self.window.Ask()
 
 
+class PresetMultiButtonWindow(PresetDictWindow):
+    def __init__(self, btn_dict):
+        PresetDictWindow.__init__(self, MultiButtonWindow, btn_dict)
+        self.dimensions(width=450, height=250)
+        self.has_frame(showFrame=True)
+
+    def Show(self):
+        self._init()
+        return self.window.Show()
+
+
 class TextWindow(BaseWindow):
     def __init__(self, config):
         BaseWindow.__init__(self, config)
@@ -711,6 +731,34 @@ class TextWindow(BaseWindow):
         if len(self.msg) > 0:
             msg = self.msg
         self.text = self.canvas.create_text(x, y, text=msg, fill=self.msg_color.hex_l, font=self.h3, anchor='center')
+        self.root.mainloop()
+        return self
+
+
+class MultiButtonWindow(BaseWindow):
+    def __init__(self, config, btn_dict):
+        BaseWindow.__init__(self, config)
+        #For dynamic height
+        self.btn_dict = btn_dict
+        self.max_height = 900
+        self.buffer = 5
+        self.line_spacing = 5
+        self.height = self.buffer+(self.line_spacing+self.btn_height)*len(self.btn_dict)
+        self.btn_y = self.buffer/2
+
+    def Show(self):
+        self._Show()
+        i=0
+        for name, method in self.btn_dict.items():
+            if i > 0:
+                self.btn_y += self.btn_height
+                self.btn_y += self.line_spacing
+            btn = self.add_choice_btn(name)
+            btn['command'] = method
+            btn.place(x = self.width/2-((self.width/2)*0.8), y = self.btn_y, height = self.btn_height, relwidth = 0.75)
+            i+=1
+
+        self.configure_btns()
         self.root.mainloop()
         return self
 

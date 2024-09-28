@@ -1,5 +1,20 @@
-from gradientmessagebox import  ColorConfig, BaseWindow, ChoiceWindow, PresetFileSelectWindow, PresetDropDownWindow, PresetPromptWindow, PresetChoiceEntryWindow, PresetChoiceWindow, PresetImageBgMessage, PresetCopyTextWindow, PresetChoiceMultilineEntryWindow, CopyTextWindow, PresetUserPasswordWindow, TextWindow, ThreadedWindow, PresetLoadingMessage
+from gradientmessagebox import *
 import time
+
+def test_1():
+	print('1')
+
+def test_2():
+	print('2')
+
+def test_3():
+	print('3')
+
+def test_4():
+	print('4')
+
+def test_5():
+	print('5')
 
 #config = ColorConfig(450, 300)
 config = ColorConfig(width=450, height=300, color1="#4ed8a7", color2="#cf5270", alpha=1.0, saturation=1.0, direct='+x', hasFrame=True)
@@ -41,10 +56,14 @@ text = '''A very simple tkinter prompt window
 #win = PresetDropDownWindow(txt)
 #win = PresetChoiceEntryWindow(txt, '1', '2')
 #win = PresetChoiceMultilineEntryWindow(txt, '1', '2')
+#x = win.Ask()
+btn_dict = { '1': test_1, '2': test_2,'3': test_3,'4': test_4,'5': test_5 }
+win = PresetMultiButtonWindow(btn_dict)
+win.Show()
 #win = PresetCopyTextWindow(txt)
 #win = PresetFileSelectWindow(txt)
 #win.default_entry_text('Some default text')
-win =  PresetImageBgMessage(msg='HEAVYMETA', bg_img='./hvym_3d_logo.png', logo_img='./logo.png')
+#win =  PresetImageBgMessage(msg='HEAVYMETA', bg_img='./hvym_3d_logo.png', logo_img='./logo.png')
 #win = PresetUserPasswordWindow(txt, '1', '2')
 #win = PresetPromptWindow(text)
 # win.custom_txt_color('black')
@@ -57,16 +76,16 @@ win =  PresetImageBgMessage(msg='HEAVYMETA', bg_img='./hvym_3d_logo.png', logo_i
 #x = win.FileSelect()
 #x = win.Ask('Ask a question?', 'copy', 'cancel', txt)
 #x = win.Show()
-win.Play()
+#win.Play()
 #x=win.DropDown(['1', '2', '3'])
 
 
 
 #print(x.response)
-time.sleep(50)
+#time.sleep(50)
 
 #win.Close()
-win.Stop()
+#win.Stop()
 # print('GETS HERE')
 
 #win.Show()
