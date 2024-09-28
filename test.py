@@ -55,11 +55,11 @@ text = '''A very simple tkinter prompt window
 #win = PresetChoiceWindow(cool, 'Yup', 'Nope')
 #win = PresetDropDownWindow(txt)
 #win = PresetChoiceEntryWindow(txt, '1', '2')
-#win = PresetChoiceMultilineEntryWindow(txt, '1', '2')
-#x = win.Ask()
-btn_dict = { '1': test_1, '2': test_2,'3': test_3,'4': test_4,'5': test_5 }
-win = PresetMultiButtonWindow(btn_dict)
-win.Show()
+win = PresetChoiceMultilineEntryWindow(txt, '1', '2')
+x = win.Ask()
+# btn_dict = { '1': test_1, '2': test_2,'3': test_3,'4': test_4,'5': test_5 }
+# win = PresetMultiButtonWindow(btn_dict)
+# win.Show()
 #win = PresetCopyTextWindow(txt)
 #win = PresetFileSelectWindow(txt)
 #win.default_entry_text('Some default text')

@@ -1,6 +1,6 @@
 """A very simple tkinter prompt window with an animated gradient background, By: Fibo Metavinci"""
 
-__version__ = "1.3"
+__version__ = "1.4"
 
 import threading
 import tkinter
@@ -600,7 +600,9 @@ class PresetDictWindow(BaseConfigWindow):
 
 class PresetWindow(BaseConfigWindow):
     def __init__(self, _window, msg, b_accept, b_decline, entry, horizontal):
-        BaseConfigWindow.__init__(self, _window)
+        BaseConfigWindow.__init__(self)
+        self._window = _window
+        self.window = None
         self.msg = msg
         self.b_accept = b_accept
         self.b_decline = b_decline
