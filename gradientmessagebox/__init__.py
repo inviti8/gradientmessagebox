@@ -1,6 +1,6 @@
 """A very simple tkinter prompt window with an animated gradient background, By: Fibo Metavinci"""
 
-__version__ = "1.4"
+__version__ = "1.5"
 
 import threading
 import tkinter
@@ -13,6 +13,7 @@ import sys
 import time
 from colour import Color
 import pyperclip
+import webbrowser
 import os
 
 FILE_PATH = Path(__file__).parent
@@ -33,6 +34,7 @@ class GradientFrame(tkinter.Canvas):
         self._active = False
         self._speed = speed
         self._stretch = stretch
+        self._root = None
         if 'y' in self._direct:
             self._limit = self._height
 
@@ -52,6 +54,9 @@ class GradientFrame(tkinter.Canvas):
         else:
             self.bind("<Configure>", self._draw_gradient)
 
+    def SetRoot(self, root):
+        self._root = root
+
     def _draw_gradient(self, event=None):
         '''Draw the gradient'''
         self.delete("gradient")
@@ -66,6 +71,7 @@ class GradientFrame(tkinter.Canvas):
 
     def Stop(self):
         self._active = False
+        self._root.after_cancel(self.Animate)
 
     def Play(self):
         c1 = self._color1
@@ -82,9 +88,12 @@ class GradientFrame(tkinter.Canvas):
 
     def Animate(self):
         if self and self._active:
-            self.colors.append(self.colors.pop(0))
-            self._draw_gradient()
-            self.after(self._speed, self.Animate)
+            try:
+                self.colors.append(self.colors.pop(0))
+                self._draw_gradient()
+                self.after(self._speed, self.Animate)
+            except:
+                print('')
 
 
 class WidgetConfig:
@@ -287,10 +296,22 @@ class BaseWindow:
         self.msg = ''
         self.animate = False
 
+    def add_lambda_btn(self, btn_txt, method, *args):
+        btn = tkinter.Button(self.canvas, text=btn_txt, command= lambda var=args: method(var))
+        self.btns.append(btn)
+        return btn
+
     def add_choice_btn(self, btn_txt):
         btn = tkinter.Button(self.canvas, text=btn_txt)
         self.btns.append(btn)
         return btn
+
+    def _add_link_button(self, link, y):
+        btn = tkinter.Button(self.canvas, text=link, command= lambda: webbrowser.open_new(link))
+        self.btns.append(btn)
+        btn.place(x = self.width/2-((self.width/2)*0.95), y = y, height = self.btn_height, relwidth = 0.95)
+
+        self.configure_btns()
 
     def configure_btns(self):
         for btn in self.btns:
@@ -396,6 +417,7 @@ class BaseWindow:
         self.canvas = GradientFrame(self.window, self.color1, self.color2, self.direct, self.animated, self.speed, self.stretch, width=self.width, height=self.height, bd=0,
                    highlightthickness=0, relief="ridge")
         self.canvas.pack(expand=True, fill='both')
+        self.canvas.SetRoot(self.root)
 
         if self.hasImg and self.path != None:
             self.img = tkinter.PhotoImage(file=self.path, format='png')
@@ -406,9 +428,18 @@ class BaseWindow:
             self.start_msg_animation()
 
     def Close(self):
+        print('close')
         self.animate = False
         self.canvas.Stop()
-        #self.window.destroy()
+        self.root.after_cancel(self.canvas.Animate)
+        sys.stdout.flush()
+        return
+
+    def ForceClose(self):
+        self.animate = False
+        self.canvas.Stop()
+        self.root.after_cancel(self.canvas.Animate)
+        self.root.destroy()
         sys.stdout.flush()
         return
 
@@ -553,7 +584,7 @@ class PresetThreadedWindow(BasePresetThreadedWindow):
 
 class PresetLoadingMessage(PresetThreadedWindow):
     def __init__(self, msg, *args):
-        BasePresetThreadedWindow.__init__(self, TextWindow, args)
+        PresetThreadedWindow.__init__(self, TextWindow, args)
         self.dimensions(width=500, height=40)
         self.has_frame(showFrame=False)
         self.msg = msg
@@ -570,7 +601,7 @@ class PresetLoadingMessage(PresetThreadedWindow):
 
 class PresetImageBgMessage(PresetThreadedWindow):
     def __init__(self, msg, bg_img, logo_img, *args):
-        BasePresetThreadedWindow.__init__(self, TextWindow, args)
+        PresetThreadedWindow.__init__(self, TextWindow, args)
         self.dimensions(width=450, height=300)
         self.has_frame(showFrame=False)
         self.imagery(bg_img, logo_img)
@@ -587,7 +618,7 @@ class PresetImageBgMessage(PresetThreadedWindow):
         self.Close()
 
 
-class PresetDictWindow(BaseConfigWindow):
+class PresetDictWindowBase(BaseConfigWindow):
     def __init__(self, _window, dictionary):
         BaseConfigWindow.__init__(self)
         self._window = _window
@@ -598,7 +629,19 @@ class PresetDictWindow(BaseConfigWindow):
         self.window = self._window(self.config, self.dict)
 
 
-class PresetWindow(BaseConfigWindow):
+class PresetMessageWindowBase(BaseConfigWindow):
+    def __init__(self, _window, msg, link=False):
+        BaseConfigWindow.__init__(self)
+        self._window = _window
+        self.window = None
+        self.msg = msg
+        self.link = link
+
+    def _init(self):
+        self.window = self._window(self.config, self.msg, self.link)
+
+
+class PresetWindowBase(BaseConfigWindow):
     def __init__(self, _window, msg, b_accept, b_decline, entry, horizontal):
         BaseConfigWindow.__init__(self)
         self._window = _window
@@ -616,9 +659,9 @@ class PresetWindow(BaseConfigWindow):
         self.horizontal = False
 
 
-class PresetPromptWindow(PresetWindow):
+class PresetPromptWindow(PresetWindowBase):
     def __init__(self, msg, b_accept='OK'):
-        PresetWindow.__init__(self, ChoiceWindow, msg, b_accept, 'Close', False, True)
+        PresetWindowBase.__init__(self, ChoiceWindow, msg, b_accept, 'Close', False, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
 
@@ -627,9 +670,31 @@ class PresetPromptWindow(PresetWindow):
         return self.window.Prompt()
 
 
-class PresetChoiceWindow(PresetWindow):
+class PresetWidePromptWindow(PresetWindowBase):
+    def __init__(self, msg, b_accept='OK'):
+        PresetWindowBase.__init__(self, ChoiceWindow, msg, b_accept, 'Close', False, True)
+        self.dimensions(width=950, height=300)
+        self.has_frame(showFrame=True)
+
+    def Prompt(self):
+        self._init()
+        return self.window.Prompt()
+
+
+class PresetLinkWindow(PresetMessageWindowBase):
+    def __init__(self, msg):
+        PresetMessageWindowBase.__init__(self, MessageWindow, msg, True)
+        self.dimensions(width=950, height=250)
+        self.has_frame(showFrame=True)
+
+    def Prompt(self):
+        self._init()
+        return self.window.Prompt()
+
+
+class PresetChoiceWindow(PresetWindowBase):
     def __init__(self, msg, b_accept='OK', b_decline='CANCEL'):
-        PresetWindow.__init__(self, ChoiceWindow, msg, b_accept, b_decline, False, True)
+        PresetWindowBase.__init__(self, ChoiceWindow, msg, b_accept, b_decline, False, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
 
@@ -638,10 +703,10 @@ class PresetChoiceWindow(PresetWindow):
         return self.window.Ask()
 
 
-class PresetChoiceEntryWindow(PresetWindow):
+class PresetChoiceEntryWindow(PresetWindowBase):
     def __init__(self, msg, b_accept='OK', b_decline='CANCEL'):
-        PresetWindow.__init__(self, ChoiceWindow, msg, b_accept, b_decline, True, True)
-        self.dimensions(width=450, height=250)
+        PresetWindowBase.__init__(self, ChoiceWindow, msg, b_accept, b_decline, True, True)
+        self.dimensions(width=450, height=100)
         self.has_frame(showFrame=True)
 
     def Ask(self):
@@ -649,9 +714,9 @@ class PresetChoiceEntryWindow(PresetWindow):
         return self.window.Ask()
 
 
-class PresetFileSelectWindow(PresetWindow):
+class PresetFileSelectWindow(PresetWindowBase):
     def __init__(self, msg, b_accept='BROWSE'):
-        PresetWindow.__init__(self, FileSelectWindow, msg, b_accept, 'CANCEL', True, True)
+        PresetWindowBase.__init__(self, FileSelectWindow, msg, b_accept, 'CANCEL', True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
 
@@ -661,9 +726,9 @@ class PresetFileSelectWindow(PresetWindow):
         return self.window.FileSelect()
 
 
-class PresetDropDownWindow(PresetWindow):
+class PresetDropDownWindow(PresetWindowBase):
     def __init__(self, msg, b_accept='OK'):
-        PresetWindow.__init__(self, ChoiceWindow, msg, b_accept, 'CANCEL', True, True)
+        PresetWindowBase.__init__(self, ChoiceWindow, msg, b_accept, 'CANCEL', True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
 
@@ -672,9 +737,9 @@ class PresetDropDownWindow(PresetWindow):
         return self.window.DropDown(arr)
 
 
-class PresetChoiceMultilineEntryWindow(PresetWindow):
+class PresetChoiceMultilineEntryWindow(PresetWindowBase):
     def __init__(self, msg, b_accept='OK', b_decline='CANCEL'):
-        PresetWindow.__init__(self, MultiTextChoiceWindow, msg, b_accept, b_decline, True, True)
+        PresetWindowBase.__init__(self, MultiTextChoiceWindow, msg, b_accept, b_decline, True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
         self.msg = msg
@@ -684,9 +749,9 @@ class PresetChoiceMultilineEntryWindow(PresetWindow):
         return self.window.Ask()
 
 
-class PresetCopyTextWindow(PresetWindow):
+class PresetCopyTextWindow(PresetWindowBase):
     def __init__(self, msg, b_accept='COPY', b_decline='CANCEL'):
-        PresetWindow.__init__(self, CopyTextWindow, msg, b_accept, b_decline, True, True)
+        PresetWindowBase.__init__(self, CopyTextWindow, msg, b_accept, b_decline, True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
 
@@ -695,9 +760,9 @@ class PresetCopyTextWindow(PresetWindow):
         return self.window.Ask()
 
 
-class PresetUserPasswordWindow(PresetWindow):
+class PresetUserPasswordWindow(PresetWindowBase):
     def __init__(self, msg, b_accept='GO', b_decline='CANCEL'):
-        PresetWindow.__init__(self, UserPasswordWindow, msg, b_accept, b_decline, True, True)
+        PresetWindowBase.__init__(self, UserPasswordWindow, msg, b_accept, b_decline, True, True)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
         self.msg = msg
@@ -707,9 +772,9 @@ class PresetUserPasswordWindow(PresetWindow):
         return self.window.Ask()
 
 
-class PresetMultiButtonWindow(PresetDictWindow):
+class PresetMultiButtonWindow(PresetDictWindowBase):
     def __init__(self, btn_dict):
-        PresetDictWindow.__init__(self, MultiButtonWindow, btn_dict)
+        PresetDictWindowBase.__init__(self, MultiButtonWindow, btn_dict)
         self.dimensions(width=450, height=250)
         self.has_frame(showFrame=True)
 
@@ -742,11 +807,19 @@ class MultiButtonWindow(BaseWindow):
         BaseWindow.__init__(self, config)
         #For dynamic height
         self.btn_dict = btn_dict
+        self.methods = {}
         self.max_height = 900
         self.buffer = 5
         self.line_spacing = 5
         self.height = self.buffer+(self.line_spacing+self.btn_height)*len(self.btn_dict)
         self.btn_y = self.buffer/2
+
+    def _btn_press(self, name):
+        key = name[0]
+        self.ForceClose()
+        time.sleep(0.7)
+        self.methods[key]()
+
 
     def Show(self):
         self._Show()
@@ -755,8 +828,9 @@ class MultiButtonWindow(BaseWindow):
             if i > 0:
                 self.btn_y += self.btn_height
                 self.btn_y += self.line_spacing
-            btn = self.add_choice_btn(name)
-            btn['command'] = method
+
+            btn = self.add_lambda_btn(name, self._btn_press, name)
+            self.methods[name] = method
             btn.place(x = self.width/2-((self.width/2)*0.8), y = self.btn_y, height = self.btn_height, relwidth = 0.75)
             i+=1
 
@@ -765,13 +839,43 @@ class MultiButtonWindow(BaseWindow):
         return self
 
 
+class MessageWindow(BaseWindow):
+    def __init__(self, config, msg, link=False):
+        BaseWindow.__init__(self, config)
+        self.msg = msg
+        self.link = link
+        #For dynamic height
+        self.max_height = 100
+        self.line_spacing = 0.03
+        self.msg_y = self.max_height*self.line_spacing
+
+        if self.title != None and len(self.title)>0:
+            self.title_y = self.max_height*(self.line_spacing/2)
+            self.msg_y = self.max_height*(self.line_spacing*2)
+            self.inc+=2
+
+        self.height = self.max_height
+
+    def _add_title(self):
+        if self.title != None and len(self.title)>0:
+            self.canvas.create_text(self.width/2, self.title_y, text=self.title, fill=self.msg_color.hex_l, font=self.h1, anchor='n')
+
+    def Prompt(self):
+        self._Show()
+        self._add_title()
+        
+        if self.link:
+            self._add_link_button(self.msg, self.msg_y+(self.btn_height/2))
+        else:
+            self.canvas.create_text(self.width/2, self.msg_y, text=self.msg, fill=self.msg_color.hex_l, font=self.h3, anchor='n')
+
+        self.root.mainloop()
+        return self
+
+
 class ChoiceWindow(BaseWindow):
     def __init__(self, config, msg, b_accept, b_decline, entry=False, horizontal=True):
         BaseWindow.__init__(self, config)
-        self.b_accept = None
-        self.b_decline = None
-        self.entry = None
-        self.response = None
         self.msg = msg
         self.b_accept = b_accept
         self.b_decline = b_decline
